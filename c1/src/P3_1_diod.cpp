@@ -78,38 +78,35 @@ void P3_1_diod( TCanvas * Canv0 ) {
   ///////////////////////////////////////////////////////////
   /// Adattamento
   
-  // double c1 = 38.6;	// V^-1 costante fornita dalle istruzioni
-
-  TF1  *f1 = new TF1("f1","(exp( [0] * x ) - 1)*[1] + x*[2]",2.2 ,3);
-    f1->SetRange(2.2, 3);
+  double f1Min = 2.3;
+  double f1Max = 3.0;
+    
+  TF1  *f1 = new TF1("f1","(exp( [0] * x ) - 1)*[1] + x*[2]", f1Min ,f1Max);
     f1->SetParameter(0, 1 );
     f1->SetParameter(1, 1 );
-    f1->SetParameter(2, 1 );
+    f1->SetParameter(2, exp10(-2) );
     
     
-    TFitResultPtr pf1 = gr->Fit(f1,"S");
+    TFitResultPtr pf1 = gr->Fit("f1","S", "", f1Min ,f1Max);
 
-    
+
 
   ///////////////////////////////////////////////////////////
   /// Calcolo Chi2
   
   double chi2 = 0;
-  double x,y;
+  double * x = gr->GetX();
+  double * y = gr->GetY();
   
-  // int nfit = f1->GetNumberFitPoints();
-  int npar = f1->GetNDF();
-  int dof = size - npar;
-    std::cout << "f1->GetNDF() : "<< f1->GetNDF() << "\n";	//check
-    std::cout << "dof : "<< dof << "\n";			//check
+  for (int i = 0; i< gr->GetN(); i++) {
     
-    
-  for (int i = 0; i< size; i++) {
-      gr->GetPoint(i, x, y );
-      chi2 +=  pow( y - f1->Eval(x) ,2) / gr->GetErrorY(i);
+    // selects points in the fitting range
+    if ( x[i] >= f1Min && x[i] <= f1Max ) chi2 +=  pow( y[i] - f1->Eval(x[i]) ,2) / gr->GetErrorY(i);
     }
-    
-    std::cout << "chi2 / dof : "<< chi2 / dof << "\n";	//check
+
+  int dof  = f1->GetNumberFitPoints() - f1->GetNpar() - 1;
+    std::cout << "dof : "<< dof << "\n";			//check
+    std::cout << "chi2 / dof : "<< chi2 / dof << "\n";		//check
 
 
 

@@ -70,7 +70,7 @@ columns( dcols )
 
     	buffer.assign(buffer_c);							// converto in string per facilità
 
-	    if ( buffer.size() > 1 ) pData->at(i).push_back( strtod( buffer.c_str(), NULL ) );
+	    if ( buffer.size() > 0 ) pData->at(i).push_back( strtod( buffer.c_str(), NULL ) );
 	    
 	}
 }

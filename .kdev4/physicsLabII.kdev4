@@ -14,6 +14,11 @@ Environment Profile=
 Extra Arguments=
 Install Directory=file:///home/alfre/projects/L2/physicsLabII/bin
 
+[CustomDefinesAndIncludes][ProjectPath0]
+Defines=\x00\x00\x00\x00
+Includes=\x00\x00\x00\x02\x00\x00\x00$\x00/\x00u\x00s\x00r\x00/\x00i\x00n\x00c\x00l\x00u\x00d\x00e\x00/\x00r\x00o\x00o\x00t\x00/\x00\x00\x00,\x00/\x00u\x00s\x00r\x00/\x00i\x00n\x00c\x00l\x00u\x00d\x00e\x00/\x00r\x00o\x00o\x00t\x00/\x00F\x00i\x00t\x00/
+Path=.
+
 [Defines And Includes][Compiler]
 Name=GCC
 Path=gcc
@@ -33,7 +38,7 @@ Arguments=
 EnvironmentGroup=
 Executable=file:///home/alfre/projects/L2/physicsLabII/Launcher_alfre.sh
 Execute on Remote Host=false
-Interpreter=
+Interpreter=bash
 Output Filtering Mode=2
 Remote Host=
 Run current file=false
