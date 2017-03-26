@@ -5,8 +5,6 @@
 #include <TCanvas.h>
 #include <TApplication.h>
 #include <TGraphErrors.h>
-#include <TFitResultPtr.h>
-#include <TFrame.h>
 
 //c++ P1_2_ohmslawR2.cpp `root-config --cflags --glibs` -o P1_2_ohmslawR2.o
 
