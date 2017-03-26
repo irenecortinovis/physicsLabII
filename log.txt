@@ -1,0 +1,5 @@
+In file included from main.cpp:20:0:
+./c1/src/P3_1_diod.cpp: In function ‘void P3_1_diod(TCanvas*)’:
+./c1/src/P3_1_diod.cpp:100:7: warning: unused variable ‘nfit’ [-Wunused-variable]
+   int nfit = f1->GetNumberFitPoints();
+       ^
