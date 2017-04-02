@@ -47,14 +47,17 @@ int main(){
 	
 	//plot gr
 	TGraphErrors* gr = new TGraphErrors(n, &voltageIn.at(0), &voltageOut.at(0), &errvoltageIn.at(0), &errvoltageOut.at(0));
-	gr->SetTitle("R1 and R2 low resistance");
-	gr->GetXaxis()->SetTitle("Voltage in [V]");
-	gr->GetYaxis()->SetTitle("Voltage out [V]");
-	gr->Draw("AP");
+	gr->SetTitle("R1 e R2 resistenza bassa");
+	gr->GetXaxis()->SetTitle("V in [V]");
+	gr->GetYaxis()->SetTitle("V out [V]");
+	//gr->Draw("AP");
+
 
 
 	//TF1
 	TF1* f1 = new TF1("f1", "0.5*x", voltageIn.at(0), voltageIn.at(n-1));
+
+
 
 	//chi square
 	double chi2 = 0;
@@ -69,6 +72,9 @@ int main(){
 	}
 
 	std::cout << "chi2 / dof : "<< chi2 / dof << std::endl;
+	gr->Draw("AP");
+	f1->Draw("SAME");
+	c1->Print("C1_P2_partResLow.eps", "eps");
 
 	Grafica->Run("");
 
