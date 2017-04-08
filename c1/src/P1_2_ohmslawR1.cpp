@@ -1,12 +1,11 @@
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <TH1F.h>
 #include <TF1.h>
 #include <TCanvas.h>
 #include <TApplication.h>
 #include <TGraphErrors.h>
-#include <TFitResultPtr.h>
-#include <TFrame.h>
 
 //c++ P1_2_ohmslawR1.cpp `root-config --cflags --glibs` -o P1_2_ohmslawR1.o
 
@@ -44,7 +43,7 @@ int main(){
 	//plot and fit
 	TCanvas* c1 = new TCanvas("c1","A Simple Graph with error bars");
 	TGraphErrors* gr = new TGraphErrors(n,voltage,current,errvoltage,errcurrent);
-	gr->SetTitle("TGraphErrors c1 test");
+	gr->SetTitle("Legge di Ohm - Resistore 1");
 	gr->GetXaxis()->SetTitle("Voltage [V]");
 	gr->GetYaxis()->SetTitle("Current [A]");
 
@@ -56,13 +55,13 @@ int main(){
 	double resistance;
 	resistance = 1/fitC1->GetParameter(0);
 	//find error for resistance
-	double errresistance;
-	//?? 
+	double errresistance = resistance*resistance * (fitC1->GetParError(0));
 
 	gr->Draw("AP");
+	c1->Print("R1.eps", "eps");
 
-
-	std::cout << "resistance from fit = " << resistance << " ohm" << std::endl;
+	std::cout << std::fixed;
+	std::cout << "resistance from fit = " << std::setprecision(2) << resistance << " ohm +/- " << std::setprecision(2) << errresistance << " ohm" << std::endl;
 	std::cout << "measured resistance = 677 +/- 1 ohm" << std::endl;
 
 
