@@ -18,7 +18,7 @@
 
 
 #include "./c1/src/P3_1_diod.cpp"
-
+#include "./c2/src/P1_1_trueRMS.cpp"
 
 int main( int argc, char * argv[]){
 
@@ -29,16 +29,14 @@ int main( int argc, char * argv[]){
 
   TApplication* x1 = new TApplication( "x1", &argc, argv);
   TCanvas     * Canv0 = new TCanvas     ( "Canv0", "Canv0", 950, 950 );
-	 	Canv0->Divide(2,1);
-		
+// 	 	Canv0->Divide(2,1);
 		
 		
   ///////////////////////////////////////////////////////////
   /// Laboratorio
 
-  P3_1_diod( Canv0 );	// C1
-		
-		
+//   P3_1_diod( Canv0 );	// C1
+  P1_1_trueRMS( Canv0 );	// C2
 
   
   x1->Run();
