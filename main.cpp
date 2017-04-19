@@ -19,6 +19,8 @@
 
 #include "./c1/src/P3_1_diod.cpp"
 #include "./c2/src/P1_1_trueRMS.cpp"
+#include "./c3/src/P1_impedenze_fdt.cpp"
+
 
 int main( int argc, char * argv[]){
 
@@ -36,8 +38,8 @@ int main( int argc, char * argv[]){
   /// Laboratorio
 
 //   P3_1_diod( Canv0 );	// C1
-  P1_1_trueRMS( Canv0 );	// C2
-
+//   P1_1_trueRMS( Canv0 );	// C2
+  P1_impedenze_fdt( Canv0 );	// C3
   
   x1->Run();
 
