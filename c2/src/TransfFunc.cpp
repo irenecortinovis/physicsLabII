@@ -34,7 +34,7 @@ int main(int argc, char** argv){
 
 	TApplication* Grafica = new TApplication("Grafica", 0, NULL);
 
-	//create vectors for tgrapherrors
+	//create vectors for tgraphpolar
 	int n=13;
 	double vba_vb[n];
 	double errv[n];
@@ -62,9 +62,12 @@ int main(int argc, char** argv){
 	inFile.close();
 
 	//plot
-	TCanvas* c1 = new TCanvas("c1","test");
+	TCanvas* c1 = new TCanvas("c1","Transfer function");
 	TGraphPolar * gr = new TGraphPolar(n, deltaphi, vba_vb, errdeltaphi, errv);
-	gr->SetTitle("test");
+	if(arg1 == 1)
+		gr->SetTitle("Transfer function Va-b/Vb deltaPhi");
+	else if(arg1 == 2)
+		gr->SetTitle("Transfer function Vb/Va deltaPhi'");
 	gr->SetMarkerStyle(20);
 	gr->SetMarkerSize(2.);
 	gr->SetMarkerColor(4);
@@ -75,7 +78,7 @@ int main(int argc, char** argv){
 
 	c1->Update();
    	gr->GetPolargram()->SetToRadian();
-	c1->Print("R1.png", "png");
+	c1->Print("R1.eps", "eps");
 
 
 	Grafica->Run("");
