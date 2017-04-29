@@ -27,26 +27,26 @@ int main()
 
 //---------------------------Definizione Fit
 
-	TF1 * fit1 = new TF1("RC Vc carica", "[0]*(1-exp(-x/[1]))",0,700);
+	TF1 * fit1 = new TF1("RC Vc carica", "2*[0]*(1-exp(-x/[1]))",0,700);
 	//[0]= V0 [1]=tau
-	fit1->SetParName(0,"V_0");
-	fit1->SetParName(1,"Tau");
+	fit1->SetParName(0,"V_0 [V]");
+	fit1->SetParName(1,"Tau [micro s]");
 
-	TF1 * fit2 = new TF1("RC Vc scarica", "[0]*exp(-x/[1])",0,700);
+	TF1 * fit2 = new TF1("RC Vc scarica", "2*[0]*exp(-x/[1])",0,700);
 	//[0]= V0 [1]=tau
-	fit2->SetParName(0,"V_0");
-	fit2->SetParName(1,"Tau");
+	fit2->SetParName(0,"V_0 [V]");
+	fit2->SetParName(1,"Tau [micro s]");
 
 	//change these to current (divide by R)
-	TF1 * fit3 = new TF1("RC Vr carica", "[0]*exp(-x/[1])",0,700);
+	TF1 * fit3 = new TF1("RC Vr carica", "2*[0]*exp(-x/[1])",0,700);
 	//[0]= V0 [1]=tau
-	fit3->SetParName(0,"V_0");
-	fit3->SetParName(1,"Tau");
+	fit3->SetParName(0,"V_0 [V]");
+	fit3->SetParName(1,"Tau [micro s]");
 
-	TF1 * fit4 = new TF1("RC Vr scarica", "-[0]*exp(-x/[1])",0,700);
+	TF1 * fit4 = new TF1("RC Vr scarica", "-2*[0]*exp(-x/[1])",0,700);
 	//[0]= V0 [1]=tau
-	fit4->SetParName(0,"V_0");
-	fit4->SetParName(1,"Tau");
+	fit4->SetParName(0,"V_0 [V]");
+	fit4->SetParName(1,"Tau [micro s]");
 
 
 //-----------------Definizione grafici
@@ -84,7 +84,7 @@ int main()
 	Gerr1->SetMarkerSize(1);
 	Gerr1->SetMarkerStyle(21);
 
-	fit1->SetParameter(0,20);
+	fit1->SetParameter(0,10);
 	fit1->SetParameter(1,200);
 
 	Gerr1->Fit(fit1,"C");
@@ -96,7 +96,7 @@ int main()
 	Gerr2->SetMarkerSize(1);
 	Gerr2->SetMarkerStyle(21);
 
-	fit2->SetParameter(0,20);
+	fit2->SetParameter(0,10);
 	fit2->SetParameter(1,200);
 
 	Gerr2->Fit(fit2,"C");
@@ -108,7 +108,7 @@ int main()
 	Gerr3->SetMarkerSize(1);
 	Gerr3->SetMarkerStyle(21);
 
-	fit3->SetParameter(0,20);
+	fit3->SetParameter(0,10);
 	fit3->SetParameter(1,200);
 
 	Gerr3->Fit(fit3,"C");
@@ -120,7 +120,7 @@ int main()
 	Gerr4->SetMarkerSize(1);
 	Gerr4->SetMarkerStyle(21);
 
-	fit4->SetParameter(0,20);
+	fit4->SetParameter(0,10);
 	fit4->SetParameter(1,200);
 
 	Gerr4->Fit(fit4,"C");
