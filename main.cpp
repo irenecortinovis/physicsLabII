@@ -41,7 +41,7 @@ int main( int argc, char * argv[]){
 //   P1_1_trueRMS( Canv0 );	// C2
   P1_impedenze_fdt( Canv0 );	// C3
   
-  x1->Run();
+//  x1->Run();
 
 
 return 0;}
