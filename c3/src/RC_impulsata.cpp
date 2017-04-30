@@ -27,23 +27,23 @@ int main()
 
 //---------------------------Definizione Fit
 
-	TF1 * fit1 = new TF1("RC Vc carica", "2*[0]*(1-exp(-x/[1]))",0,700);
+	TF1 * fit1 = new TF1("RC Vc carica", "[0]*(1-exp(-x/[1]))",0,700);
 	//[0]= V0 [1]=tau
 	fit1->SetParName(0,"V_0 [V]");
 	fit1->SetParName(1,"Tau [micro s]");
 
-	TF1 * fit2 = new TF1("RC Vc scarica", "2*[0]*exp(-x/[1])",0,700);
+	TF1 * fit2 = new TF1("RC Vc scarica", "[0]*exp(-x/[1])",0,700);
 	//[0]= V0 [1]=tau
 	fit2->SetParName(0,"V_0 [V]");
 	fit2->SetParName(1,"Tau [micro s]");
 
 	//change these to current (divide by R)
-	TF1 * fit3 = new TF1("RC Vr carica", "2*[0]*exp(-x/[1])",0,700);
+	TF1 * fit3 = new TF1("RC Vr carica", "[0]*exp(-x/[1])",0,700);
 	//[0]= V0 [1]=tau
 	fit3->SetParName(0,"V_0 [V]");
 	fit3->SetParName(1,"Tau [micro s]");
 
-	TF1 * fit4 = new TF1("RC Vr scarica", "-2*[0]*exp(-x/[1])",0,700);
+	TF1 * fit4 = new TF1("RC Vr scarica", "-[0]*exp(-x/[1])",0,700);
 	//[0]= V0 [1]=tau
 	fit4->SetParName(0,"V_0 [V]");
 	fit4->SetParName(1,"Tau [micro s]");
