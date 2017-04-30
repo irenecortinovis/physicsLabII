@@ -421,7 +421,7 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     ///////////////////////////////////////////////////////////
     /// Print eps
     
-    std::string OutFilePrefix = "C3_P1_NonLinFit_";
+    std::string OutFilePrefix = "./c3/C3_P1_NonLinFit_";
     std::string OutFileExtension = ".eps";
     std::string OutFileName = OutFilePrefix+CompoName[comp]+OutFileExtension;
     
