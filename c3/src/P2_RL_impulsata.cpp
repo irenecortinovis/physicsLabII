@@ -1,6 +1,4 @@
-/*	comando per compilare
-c++ ../src/RL_impulsata.cpp -o RL_impulsata.o `root-config --cflags --glibs`
-*/
+//Author: Irene Cortinovis
 
 //librerie c++
 #include <iostream>
@@ -19,7 +17,7 @@ c++ ../src/RL_impulsata.cpp -o RL_impulsata.o `root-config --cflags --glibs`
 #include <TGraphErrors.h>
 #include <TStyle.h>
 
-int main()
+int C3_P2_RL_impulsata(TCanvas * c1)
 {
 	TApplication * Grafica = new TApplication("", 0, NULL);
 	gStyle->SetOptFit(1111);
@@ -50,22 +48,22 @@ int main()
 
 //-----------------Definizione grafici
 
-	TGraphErrors * Gerr1 = new TGraphErrors("../data/RLVLcharge.txt");
+	TGraphErrors * Gerr1 = new TGraphErrors("./c3/data/RLVLcharge.txt");
 	Gerr1->SetTitle("V ai capi dell'induttore nel passaggio da -V0 a +V0");
 	Gerr1->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr1->GetYaxis()->SetTitle("Tensione [V]");
 
-	TGraphErrors * Gerr2 = new TGraphErrors("../data/RLVLdischarge.txt");
+	TGraphErrors * Gerr2 = new TGraphErrors("./c3/data/RLVLdischarge.txt");
 	Gerr2->SetTitle("V ai capi dell'induttore nel passaggio da +V0 a -V0");
 	Gerr2->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr2->GetYaxis()->SetTitle("Tensione [V]");
 
-	TGraphErrors * Gerr3 = new TGraphErrors("../data/RLVRcharge.txt");
+	TGraphErrors * Gerr3 = new TGraphErrors("./c3/data/RLVRcharge.txt");
 	Gerr3->SetTitle("V ai capi del resistore nel passaggio da -V0 a +V0");
 	Gerr3->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr3->GetYaxis()->SetTitle("Tensione [V]");
 
-	TGraphErrors * Gerr4 = new TGraphErrors("../data/RLVRdischarge.txt");
+	TGraphErrors * Gerr4 = new TGraphErrors("./c3/data/RLVRdischarge.txt");
 	Gerr4->SetTitle("V ai capi del resistore nel passaggio da +V0 a -V0");
 	Gerr4->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr4->GetYaxis()->SetTitle("Tensione [V]");
@@ -73,7 +71,7 @@ int main()
 	
 //-------------------------------------Disegna e fitta grafici
 
-	TCanvas * c1 = new TCanvas("c1", "RL corrente impulsata",0,0,900,500);
+	c1->SetTitle("RL corrente impulsata");
 	c1->Divide(2,2); 
 	
 	//------Carica VC

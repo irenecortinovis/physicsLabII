@@ -1,6 +1,6 @@
 //
 //
-// c++ stat1.cc main.cpp -oL2 -Wall -std=c++98 `root-config --cflags --glibs`
+// c++ stat1.cc main.cpp -o L2.o -Wall -std=c++98 `root-config --cflags --glibs`
 
 /* NOTE:
 
@@ -18,8 +18,10 @@
 
 
 #include "./c1/src/P3_1_diod.cpp"
-#include "./c2/src/P1_1_trueRMS.cpp"
+//#include "./c2/src/P1_1_trueRMS.cpp"
 #include "./c3/src/P1_impedenze_fdt.cpp"
+#include "./c3/src/P2_RL_impulsata.cpp"
+#include "./c3/src/P2_RC_impulsata.cpp"
 
 
 int main( int argc, char * argv[]){
@@ -36,10 +38,18 @@ int main( int argc, char * argv[]){
 		
   ///////////////////////////////////////////////////////////
   /// Laboratorio
+//------------ C1 ---------------
+//   P3_1_diod( Canv0 );
 
-//   P3_1_diod( Canv0 );	// C1
-//   P1_1_trueRMS( Canv0 );	// C2
-  P1_impedenze_fdt( Canv0 );	// C3
+//------------ C2 ---------------
+//   P1_1_trueRMS( Canv0 );
+
+//------------ C3 ---------------
+   P1_impedenze_fdt( Canv0 );
+//	 C3_P2_RL_impulsata( Canv0 );
+//	 C3_P2_RC_impulsata( Canv0 );
+
+
   
 //  x1->Run();
 

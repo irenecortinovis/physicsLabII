@@ -1,6 +1,4 @@
-/*	comando per compilare
-c++ ../src/RC_impulsata.cpp -o RC_impulsata.o `root-config --cflags --glibs`
-*/
+//Author: Irene Cortinovis
 
 //librerie c++
 #include <iostream>
@@ -19,7 +17,7 @@ c++ ../src/RC_impulsata.cpp -o RC_impulsata.o `root-config --cflags --glibs`
 #include <TGraphErrors.h>
 #include <TStyle.h>
 
-int main()
+void C3_P2_RC_impulsata(TCanvas * c1)
 {
 	TApplication * Grafica = new TApplication("", 0, NULL);
 	gStyle->SetOptFit(1111);
@@ -51,22 +49,22 @@ int main()
 
 //-----------------Definizione grafici
 
-	TGraphErrors * Gerr1 = new TGraphErrors("../data/RCVCcharge.txt");
+	TGraphErrors * Gerr1 = new TGraphErrors("./c3/data/RCVCcharge.txt");
 	Gerr1->SetTitle("V ai capi del condensatore durante carica");
 	Gerr1->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr1->GetYaxis()->SetTitle("Tensione [V]");
 
-	TGraphErrors * Gerr2 = new TGraphErrors("../data/RCVCdischarge.txt");
+	TGraphErrors * Gerr2 = new TGraphErrors("./c3/data/RCVCdischarge.txt");
 	Gerr2->SetTitle("V ai capi del condensatore durante scarica");
 	Gerr2->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr2->GetYaxis()->SetTitle("Tensione [V]");
 
-	TGraphErrors * Gerr3 = new TGraphErrors("../data/RCVRcharge.txt");
+	TGraphErrors * Gerr3 = new TGraphErrors("./c3/data/RCVRcharge.txt");
 	Gerr3->SetTitle("V ai capi del resistore durante carica");
 	Gerr3->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr3->GetYaxis()->SetTitle("Tensione [V]");
 
-	TGraphErrors * Gerr4 = new TGraphErrors("../data/RCVRdischarge.txt");
+	TGraphErrors * Gerr4 = new TGraphErrors("./c3/data/RCVRdischarge.txt");
 	Gerr4->SetTitle("V ai capi del resistore durante scarica");
 	Gerr4->GetXaxis()->SetTitle("Tempo [micro s]");
 	Gerr4->GetYaxis()->SetTitle("Tensione [V]");
@@ -74,7 +72,7 @@ int main()
 	
 //-------------------------------------Disegna e fitta grafici
 
-	TCanvas * c1 = new TCanvas("c1", "RC corrente impulsata",0,0,900,500);
+	c1->SetTitle("RC corrente impulsata");
 	c1->Divide(2,2); 
 	
 	//------Carica VC
@@ -164,5 +162,5 @@ int main()
 
 	Grafica->Run();
 
-	return 0;
+	return;
 }
