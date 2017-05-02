@@ -62,9 +62,9 @@ int main(int argc, char const *argv[]) {
 
 	TF1 * fit3 = new TF1("sovrasmorzato","[0]/[1]*(exp(-x*([2]-[1])) - exp(-x*([2]+[1])) )",0,100);
 	//[0]=1/2*Q0R*(omega0)^2 [1]= beta [2]=gamma
-	fit1->SetParName(0,"1/2*RQ_0*(omega_0)^2");
-	fit1->SetParName(1,"beta");
-	fit1->SetParName(2,"gamma");
+	fit3->SetParName(0,"1/2*RQ_0*(omega_0)^2");
+	fit3->SetParName(1,"beta");
+	fit3->SetParName(2,"gamma");
 
 //-----------------Definizione grafici
 
