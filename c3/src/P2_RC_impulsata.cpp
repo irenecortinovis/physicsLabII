@@ -17,7 +17,7 @@
 #include <TGraphErrors.h>
 #include <TStyle.h>
 
-void C3_P2_RC_impulsata(TCanvas * c1)
+void C3_P2_RC_impulsata()
 {
 	TApplication * Grafica = new TApplication("", 0, NULL);
 	gStyle->SetOptFit(1111);
@@ -71,8 +71,7 @@ void C3_P2_RC_impulsata(TCanvas * c1)
 
 	
 //-------------------------------------Disegna e fitta grafici
-
-	c1->SetTitle("RC corrente impulsata");
+	TCanvas* c1 = new TCanvas("c1", "RC corrente impulsata",  950, 950);
 	c1->Divide(2,2); 
 	
 	//------Carica VC
@@ -149,7 +148,7 @@ void C3_P2_RC_impulsata(TCanvas * c1)
 
 	//resistance: value and error
 	const double resistance = 14870; //Ohm
-	double resistance_err = 1 + 14870/100*0.9; //Ohm, as in Fluke manual
+	double resistance_err = resistance/100*1.9; //Ohm, as in Fluke manual
 
 	//capacitance: value and error (propagation)
 	double capacitance = tau_mean/resistance;
