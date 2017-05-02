@@ -31,13 +31,14 @@ int main( int argc, char * argv[]){
   ///////////////////////////////////////////////////////////
   /// Istanzia finestre grafiche, canvas e pads
 
-  TApplication* x1 = new TApplication( "x1", &argc, argv);
-  TCanvas     * Canv0 = new TCanvas     ( "Canv0", "Canv0", 950, 950 );
+  //TApplication* x1 = new TApplication( "x1", &argc, argv);
+  //TCanvas     * Canv0 = new TCanvas     ( "Canv0", "Canv0", 950, 950 );
 // 	 	Canv0->Divide(2,1);
 		
 		
-  ///////////////////////////////////////////////////////////
-  /// Laboratorio
+ ///////////////////////////////////////////////////////////
+ /// Laboratorio
+
 //------------ C1 ---------------
 //   P3_1_diod( Canv0 );
 
@@ -45,9 +46,12 @@ int main( int argc, char * argv[]){
 //   P1_1_trueRMS( Canv0 );
 
 //------------ C3 ---------------
-   P1_impedenze_fdt( Canv0 );
-//	 C3_P2_RL_impulsata( Canv0 );
-//	 C3_P2_RC_impulsata( Canv0 );
+//   P1_impedenze_fdt( Canv0 );
+	 C3_P2_RL_impulsata();
+//	 C3_P2_RC_impulsata();
+
+//------------ C4 ---------------
+
 
 
   
