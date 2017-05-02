@@ -35,16 +35,13 @@
 
  
 //  Non Linear Fit
-void NonLinearFit( TCanvas *, int );
-void ShowFit();
+void FitData( TCanvas *, int );
 
-//  Linear Fit
-void LinearFit( TCanvas * ); 
  
 
 
 // struttura dati elaborati
-namespace gVar{
+namespace gVar4{
   
   // osservabili
   std::vector <double>  t   	;	// tempo
@@ -69,7 +66,10 @@ namespace gVar{
   // resistori
   double r ;	// resistenza interna generatore
   double rL ;	// resistenza interna induttore
-  double R[3];	// resistsenza resitori
+  double R[3];	// resistenza resitori
+  
+  // ddp
+  double V0 = 7;	//volt
   
   // capacità
   double C;
@@ -88,12 +88,17 @@ namespace gVar{
 
 
 
-// Utilities
-void ComponentNameMessage( int );
-
-
 // funzioni per Non Linear Fit
+double SottoDC_ridotta  ( double *, double *  );
+double SottoDC_completa ( double *, double *  );
+double SovraDC          ( double *, double *  );
 
+// funzioni calcolo valori iniziali
+double Gamma( double, double );
+double Pulsa( double, double, double );
+double SottoFase ( double, double, double );
+double SottoA    ( double, double, double );
+void   PrintParIniz( double, double, double, double );
 
 
 
@@ -102,9 +107,9 @@ void ComponentNameMessage( int );
 ///
 
 
-void P1_impedenze_fdt( TCanvas * Canv0 ) {
+void P1_RLC_DC( TCanvas * Canv0 ) {
 
-
+  
 
   ///////////////////////////////////////////////////////////
   /// Data input step
@@ -114,67 +119,60 @@ void P1_impedenze_fdt( TCanvas * Canv0 ) {
     std::string file2 = "P1_critico.txt";
     std::string file3 = "P1_sovra.txt";
   
-  class stat1 sotto  ( path, file1 , 2, '\t', 3 );
-  class stat1 criti  ( path, file2 , 2, '\t', 3 );
-  class stat1 sovra ( path, file3 , 2, '\t', 3 );
+  class stat1 sotto ( path, file1 , 2, '\t', 0 );
+  class stat1 criti ( path, file2 , 2, '\t', 0 );
+  class stat1 sovra ( path, file3 , 2, '\t', 0 );
+  
+  Stat::calc( &sotto.pData->at(0) );
+  Stat::calc( &sotto.pData->at(1) );
   
   // raggruppo i quattro oggetti in un array
-  gVar::ptr[0] = &sotto;
-  gVar::ptr[1] = &criti;
-  gVar::ptr[2] = &sovra;
+  gVar4::ptr[0] = &sotto;
+  gVar4::ptr[1] = &criti;
+  gVar4::ptr[2] = &sovra;
 
 
   // etichette
-  gVar::CompoName[0] = "Smz-Sotto";
-  gVar::CompoName[1] = "Smz-Criti";
-  gVar::CompoName[2] = "Smz-Sovra";
+  gVar4::CompoName[0] = "Smz-Sotto";
+  gVar4::CompoName[1] = "Smz-Criti";
+  gVar4::CompoName[2] = "Smz-Sovra";
   
   // Resistenze
-  gVar::r   = 50; 	// resistenza interna del generatore - Ohm
-  gVar::rL  = 60; 	// resistenza interna dell'induttore - Ohm
+  gVar4::r   = 50; 	// resistenza interna del generatore - Ohm
+  gVar4::rL  = 60; 	// resistenza interna dell'induttore - Ohm
   
-  gVar::R[0] =  250; 	// Ohm
-  gVar::R[1] = 3130;
-  gVar::R[3] = 5000;
+  gVar4::R[0] =  250; 	// Ohm
+  gVar4::R[1] = 3130;
+  gVar4::R[3] = 5000;
   
   // Capacità - valori iniziali
-  gVar::C =    4.6 * exp10(-8);	// farad
+  gVar4::C =    4.6 * exp10(-8);	// farad
   
   // Induttanze - valori iniziali
-  gVar::I =   0.12; 		// henry
+  gVar4::I =   0.12; 		// henry
 
   
   /////////////////////////////////////////////////////
 
 
-
-
-  // Non linear Fit
-
-  for ( int i = 0; i<3; i++ ) NonLinearFit( Canv0, i );
-  
-  // NOT TO DO Linear Fit
-  
-  
-    
+  for ( int i = 0; i<3; i++ ) FitData( Canv0, i );
   
 return;}
 
 
 
 
-  ///////////////////////////////////////////////////////////
-  /// Non linear Fit
 
 
-void NonLinearFit( TCanvas * Canv0, int comp )
+
+void FitData( TCanvas * Canv0, int comp )
 { 
   
-  using namespace gVar;
+  using namespace gVar4;
   
-  std::cout << " -------------- Non Linear Fit -------------- " << "\n";
+  std::cout << " ---------------------------- " << "\n";
   
-  ComponentNameMessage( comp );
+  PrintParIniz( R[comp] + r + rL, I, C, V0 );
   
     
   t   	= ptr[comp]->pData->at(0);
@@ -186,9 +184,9 @@ void NonLinearFit( TCanvas * Canv0, int comp )
   
 
   TGraphErrors* mod  = new TGraphErrors ( size );
-    mod->GetXaxis()->SetTitle("log (Freq - Hz)");
-    mod->GetYaxis()->SetTitle("|Z|");
-    mod->SetTitle(" Modulo impedenza  ");
+    mod->GetXaxis()->SetTitle("t [s]");
+    mod->GetYaxis()->SetTitle("I(t) [mu A]");
+    mod->SetTitle( " title " );
     mod->SetMarkerColor(4);
     mod->SetMarkerStyle(21);
     
@@ -197,55 +195,72 @@ void NonLinearFit( TCanvas * Canv0, int comp )
   TF1  *f1 = new TF1();
 
     
-    
-    
     for (int i = 0; i< size; i++) {
       
-       y = fabs(Vb.at(i)) * ( R[comp] + r + rL );
-      sy = sqrt( pow( sigmaV*( 1/ Vb.at(i) ), 2)  + pow( 3*errR, 2) ) * y;	// propagazione errore su y
+       y = (Vb.at(i)) / ( R[comp] + r + rL );
+      sy = sqrt( pow( sigmaV*( 1/ Vb.at(i) ), 2)  + pow( 3*errR, 2) ) * fabs(y);	// propagazione errore su y
+       
+       x = t.at(i);
+      sx = 0.000001;
       
-      st = 0.01 * t;
-      
-      mod->SetPoint( i, t, y );
-      mod->SetPointError( i, st, sy );
+      mod->SetPoint( i, x, y );
+      mod->SetPointError( i, sx, sy );
     }
+
     
     f1->Clear();
+        
     
-    if ( comp == 0 ){ // Sovra-smorzamento
+    if ( comp == 0 ){ 		// Sotto-smorzamento
       
-      f1 = new TF1("ModImpedenzaC", ModImpedenzaC, fMin ,fMax, 2);
-	// 1.0 / (  par[0] + 2 * M_PI * par[1] * exp10( x[0] ) )
-	f1->FixParameter( 0, 0 );
-	f1->SetParameter( 1,  C[comp] );
-	f1->SetParName( 1, "C [F]");
-	mod->Fit("ModImpedenzaC", "C", "", fMin, fMax);
-    }
-    
-    else{	// induttori
-      
-      f1 = new TF1("ModImpedenzaL", ModImpedenzaL, fMin ,fMax, 2);
-	// sqrt( par[0]*par[0] + par[1]*par[1]*exp10( 2 * x[0] ) * 4 * M_PI * M_PI )
-	f1->FixParameter( 0,  rL );	// resitenza interna induttore
-	f1->SetParameter( 1,  I[comp] );
-	f1->SetParName( 0, "R [ohm]");
-	f1->SetParName( 1, "L [H]");
+      f1 = new TF1("SottoDC_completa", SottoDC_completa, fMin ,fMax, 4);
+	// 
 	
-	mod->Fit("ModImpedenzaL", "C", "", fMin, fMax);
+	f1->SetParName  ( 0, " A:");
+	f1->SetParameter( 0,  SottoA    ( R[comp] + r + rL, I, C ) * V0 );
+	
+	f1->SetParName  ( 1, "gamm:");
+	f1->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
+	
+	f1->SetParName  ( 2, "puls:");
+	f1->SetParameter( 2,  Pulsa( R[comp] + r + rL, I, C ) );
+	  
+	f1->SetParName  ( 3, "fase:");
+	f1->SetParameter( 3,  SottoFase ( R[comp] + r + rL, I, C) );
+
+	mod->Fit("SottoDC_completa", "C", "", fMin, fMax);
     }
+    
+    else if ( comp == 2 ){	// Sovra-smorzamento
+      
+        f1 = new TF1("SovraDC", SovraDC, fMin ,fMax, 3);
+	// 
+	
+	f1->SetParName  ( 0, " A:");
+	f1->SetParameter( 0,  V0/ ( 2*I*Pulsa( R[comp] + r + rL, I, C ) )  );
+	
+	f1->SetParName  ( 1, "gamm:");
+	f1->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
+	
+	f1->SetParName  ( 2, "puls:");
+	f1->SetParameter( 2,  Pulsa( R[comp] + r + rL, I, C ) );
+	  
+	mod->Fit("SovraDC", "C", "", fMin, fMax);
+    
+    }
+    
+    else { mod->Draw("AP"); }
 
-   
     
     
-    Canv0->SetGrid();
-      Canv0->Divide(2,1);
-      gStyle->SetOptFit(1111);
-      mod->Draw("AP");
-
-      
-      
+    
     ///////////////////////////////////////////////////////////
     /// Print eps
+    
+    Canv0->SetGrid();
+    gStyle->SetOptFit(1111);
+    
+    mod->Draw("AP");
     
     std::string OutFilePrefix = "./c4/C4_P1_";
     std::string OutFileExtension = ".eps";
@@ -258,24 +273,25 @@ void NonLinearFit( TCanvas * Canv0, int comp )
 
 
 
-void ComponentNameMessage( int i ) {
-  using namespace gVar;
-  std::cout << "\n\n" << CompoName[i] << "\n\n";
-  return;}
 
 
-
-double SottoDC_1 ( double * x, double * par ) 
+double SottoDC_ridotta ( double * x, double * par ) 
 { 
   double y = par[0] * exp( -par[1] * x[0] ) * cos( par[2] * x[0] + par[3] ); 
-  return fabs(y);  }
+  return y;  }
 
-double SottoDC_2 ( double * x, double * par )
+double SottoDC_completa ( double * x, double * par )
 { double y = par[0] * exp( -par[1] * x[0] ) * ( 
 					      -par[1] * cos( par[2] * x[0] + par[3] )
-					      -par[2] * sin( par[2] * x[0] + par[3] );
-  return fabs(y);  
-}
+					      -par[2] * sin( par[2] * x[0] + par[3] )
+					      );
+  return y;}
+
+double SovraDC ( double * x, double * par ) 
+{ 
+  double y = par[0] * exp( -par[1] * x[0] + sqrt( par[1]*par[1] - par[2] ) ) +  
+	     par[0] * exp( -par[1] * x[0] - sqrt( par[1]*par[1] - par[2] ) ) ; 
+  return y;}
 
 
 
@@ -283,6 +299,20 @@ double SottoDC_2 ( double * x, double * par )
 
 
 
+double Gamma( double R, double L )          { return 0.5* R/L; };
+double Pulsa( double R, double L, double C) { return sqrt( fabs( -(R*R / (4*L*L)) + (1/(C*L)) ) ); };
+double SottoFase ( double R, double L, double C) { return atan( ( (1.0/(R*C)) - (0.5*R/L) )/ Pulsa( R, L, C ) ); };
+double SottoA    ( double R, double L, double C) { return - C / cos( SottoFase(R, L, C)); };
 
+void PrintParIniz( double R, double L, double C, double V ){
+  using namespace gVar4;
+  std::cout << "\n---------------------------------" << "\n"
+  << "Gamma       : " 	<<  Gamma( R, L )	  	<< "\n"
+  << "Pulsa       : " 	<<  Pulsa( R, L, C) 	<< "\n"
+  << "Sotto-Fase  : "	<<  SottoFase ( R, L, C) 	<< "\n"
+  << "Sotto-A     : " 	<<  SottoA    ( R, L, C)*V 	<< "\n"
+  << "---------------------------------" << "\n\n";
+  
+return; };
 
 

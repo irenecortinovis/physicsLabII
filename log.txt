@@ -1,4 +1,4 @@
 main.cpp: In function ‘int main(int, char**)’:
-main.cpp:32:17: warning: unused variable ‘x1’ [-Wunused-variable]
+main.cpp:36:17: warning: unused variable ‘x1’ [-Wunused-variable]
    TApplication* x1 = new TApplication( "x1", 0, NULL);
                  ^

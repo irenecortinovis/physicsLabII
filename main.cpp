@@ -18,14 +18,12 @@
 
 
 #include "./c1/src/P3_1_diod.cpp"
-//#include "./c2/src/P1_1_trueRMS.cpp"
+#include "./c2/src/P1_1_trueRMS.cpp"
 #include "./c3/src/P1_impedenze_fdt.cpp"
-<<<<<<< Updated upstream
 #include "./c3/src/P2_RL_impulsata.cpp"
 #include "./c3/src/P2_RC_impulsata.cpp"
-=======
 #include "./c4/src/P1_RLC_DC.cpp"
->>>>>>> Stashed changes
+
 
 
 int main( int argc, char * argv[]){
@@ -49,19 +47,14 @@ int main( int argc, char * argv[]){
 //   P1_1_trueRMS( Canv0 );
 
 //------------ C3 ---------------
-   P1_impedenze_fdt( Canv0 );
+//   P1_impedenze_fdt( Canv0 );
 //	 C3_P2_RL_impulsata( Canv0 );
 //	 C3_P2_RC_impulsata( Canv0 );
 
-
-<<<<<<< Updated upstream
-=======
-//   P3_1_diod( Canv0 );	// C1
-//   P1_1_trueRMS( Canv0 );	// C2
-//   P1_impedenze_fdt( Canv0 );	// C3
+//------------ C4 ---------------
   P1_RLC_DC( Canv0 );		// C4
 
->>>>>>> Stashed changes
+
   
 //  x1->Run();
 
