@@ -154,25 +154,25 @@ void P1_impedenze_fdt( TCanvas * Canv0 ) {
   gVar::ptr[3] = &indut2;
 
   // etichette
-  gVar::CompoName[0] = "Conduttore 1";
-  gVar::CompoName[1] = "Conduttore 2";
-  gVar::CompoName[2] = "Induttore 1";
-  gVar::CompoName[3] = "Induttore 2";
+  gVar::CompoName[0] = "cond1";
+  gVar::CompoName[1] = "cond2";
+  gVar::CompoName[2] = "ind1";
+  gVar::CompoName[3] = "ind2";
   
   // Resistenze
   gVar::r   = 50; 	// resistenza interna del generatore - Ohm
-  gVar::rL  = 50; 	// resistenza interna dell'induttore - Ohm
+  gVar::rL  = 60; 	// resistenza interna dell'induttore - Ohm
   
   gVar::R[0] = 14870; 	// Ohm
   gVar::R[1] =   677;
   gVar::R[2] =   gVar::R[1] + gVar::rL;
   gVar::R[3] =   gVar::R[1] + gVar::rL;
   
-  // Capacità
+  // Capacità - valori iniziali
   gVar::C[0] =    1.1 * exp10(-8); 	// farad
   gVar::C[1] =    4.6 * exp10(-8);
   
-  // Induttanze
+  // Induttanze - valori iniziali
   gVar::I[2] =   0.12; 	// henry
   gVar::I[3] =   0.05;
   
@@ -185,7 +185,7 @@ void P1_impedenze_fdt( TCanvas * Canv0 ) {
 
   for ( int i = 0; i<4; i++ ) NonLinearFit( Canv0, i );
   
-  // Linear Fit
+  // NOT TO DO Linear Fit
   
   
     
@@ -262,10 +262,10 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     for (int i = 0; i< size; i++) {
       
        y = ( Vba.at(i) / Vb.at(i) ) * ( R[comp] + r );
-      sy = ( sigmaV*( 1/Vba.at(i) + 1/ Vb.at(i) )  + errR ) * y;	// propagazione errore su y
+      sy = sqrt( pow( sigmaV*( 2/Vba.at(i) + 1/ Vb.at(i) ), 2)  + pow(errR,2) ) * y;	// propagazione errore su y
       
        x = log10( v.at(i) );
-      sx = log10( v.at(i) +1 ) - log10( v.at(i) -1);	// precisione all'ultima cifra in scala log10
+      sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10
       
       mod->SetPoint( i, x, y );
       mod->SetPointError( i, sx, sy );
@@ -279,6 +279,7 @@ void NonLinearFit( TCanvas * Canv0, int comp )
 	// 1.0 / (  par[0] + 2 * M_PI * par[1] * exp10( x[0] ) )
 	f1->FixParameter( 0, 0 );
 	f1->SetParameter( 1,  C[comp] );
+	f1->SetParName( 1, "C [F]");
 	mod->Fit("ModImpedenzaC", "C", "", fMin, fMax);
     }
     
@@ -288,6 +289,9 @@ void NonLinearFit( TCanvas * Canv0, int comp )
 	// sqrt( par[0]*par[0] + par[1]*par[1]*exp10( 2 * x[0] ) * 4 * M_PI * M_PI )
 	f1->FixParameter( 0,  rL );	// resitenza interna induttore
 	f1->SetParameter( 1,  I[comp] );
+	f1->SetParName( 0, "R [ohm]");
+	f1->SetParName( 1, "L [H]");
+	
 	mod->Fit("ModImpedenzaL", "C", "", fMin, fMax);
     }
 
@@ -297,11 +301,11 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     // Arg impedenza - fase Channel 2
     for (int i = 0; i< size; i++) {
       
-       y = - 6.28* fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
-      sy =   6.28*sfC2.at(i)*v.at(i)*exp10(-6);
+       y = - 2 * M_PI * fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
+      sy =   sqrt( pow( sfC2.at(i) / fC2.at(i), 2) + pow( 1 / v.at(i), 2) ) * fabs(y);
       
        x = log10( v.at(i) );
-      sx = log10( v.at(i) +1 ) - log10( v.at(i) -1);	// precisione all'ultima cifra in scala log10      
+      sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10      
       
       if ( comp >=  2 ) y = M_PI + y;	// induttore
       
@@ -314,9 +318,9 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     if ( comp <  2 ){ // condensatori
       f1 = new TF1 ("ArgImpedenzaC", ArgImpedenzaC, fMin ,fMax, 2);
 	// par[0] + par[1] * x[0]
-	f1->SetParameter( 0, M_PI*0.5 );
+	f1->SetParameter( 0, 0.0 );
 	f1->FixParameter( 1, 0.0 );
-
+	f1->SetParName( 0, "phi [rad]");
 	arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
     }
 
@@ -326,6 +330,8 @@ void NonLinearFit( TCanvas * Canv0, int comp )
 	// atan( 2 * M_PI * exp10( x[0] ) * par[1] / par[0] )
 	f1->FixParameter( 0, rL );
 	f1->SetParameter( 1, I[comp] );
+	f1->SetParName  ( 0, "R [ohm]");
+	f1->SetParName  ( 1, "L [H]");
 	
       	arg->Fit("ArgImpedenzaL", "C", "", fMin, fMax);
     }
@@ -335,10 +341,10 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     for (int i = 0; i< size; i++) {
       
        y = Vba.at(i) / Va.at(i);
-      sy = y*( errR + sigmaV*( 1/ Vba.at(i) + 1/ Va.at(i) ) );	  // propagazione errore su y
+      sy = y * sqrt( pow(errR,2) + pow( sigmaV*( 2/ Vba.at(i) + 1/ Va.at(i) ), 2) );	  // propagazione errore su y
       
        x = log10( v.at(i) );
-      sx = log10( v.at(i) +1 ) - log10( v.at(i) -1);	// precisione all'ultima cifra in scala log10      
+      sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10      
       
       tmod->SetPoint( i, x, y );
       tmod->SetPointError( i, sx, sy  );
@@ -351,8 +357,10 @@ void NonLinearFit( TCanvas * Canv0, int comp )
       
       f1 = new TF1 ("ModFdtC", ModFdtC, fMin ,fMax, 2);
 	// 1.0 / sqrt( 1 + par[0] * par[0] * par[1] * par[1] * 4 * M_PI * M_PI * exp10( 2 * x[0] ) )
-	f1->FixParameter( 0, R[comp] );
+	f1->FixParameter( 0, R[comp] + r );
 	f1->SetParameter( 1, C[comp] );
+	f1->SetParName  ( 0, "R [ohm]");
+	f1->SetParName  ( 1, "C [F]");
 
 	tmod->Fit("ModFdtC", "C", "", fMin, fMax);
     }
@@ -363,21 +371,28 @@ void NonLinearFit( TCanvas * Canv0, int comp )
 	// sqrt( 1 / ( 1 + exp10( -2 * x[0] ) * 4 * M_PI * M_PI * par[0] * par[0] / (par[1] * par[1]) ) )
 	f1->FixParameter( 0, rL );
 	f1->SetParameter( 1, I[comp] );
+	f1->SetParName  ( 0, "R [ohm]");
+	f1->SetParName  ( 1, "L [h]");
 
 	tmod->Fit("ModFdtL", "C", "", fMin, fMax);
     }
+    
     
     
     // Arg fdt
     for (int i = 0; i< size; i++) {
       
        y =   2 * M_PI * fC1.at(i)*v.at(i)*exp10(-6);	// dati in microsecondi
-      sy =   2 * M_PI * sfC1.at(i)*v.at(i)*exp10(-6);
+      sy =   sqrt( pow( sfC1.at(i) / fC1.at(i), 2) + pow( 1 / v.at(i), 2) ) * fabs(y);
+      
+      if ( comp < 2  )  y = y - M_PI;
+      if ( comp >= 2 )  y = - y + M_PI*0.5;
+      
       
        x = log10( v.at(i) );
-      sx = log10( v.at(i) +1 ) - log10( v.at(i) -1);	// precisione all'ultima cifra in scala log10      
+      sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) ) ;	// precisione all'ultima cifra in scala log10      
       
-      targ->SetPoint( i, x, y - M_PI );
+      targ->SetPoint( i, x, y );
       targ->SetPointError( i, sx, sy  );
       
     }
@@ -390,18 +405,22 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     // atan( - 2 * M_PI * exp10( x[0] ) * par[0] * par[1] )
       f1->FixParameter( 0, R[comp] + r );
       f1->SetParameter( 1, C[comp] );
-
-      targ->Fit("ArgFdtC", "L", "", fMin, fMax);
+      f1->SetParName  ( 0, "R [ohm]");
+      f1->SetParName  ( 1, "C [F]");
+	
+      targ->Fit("ArgFdtC", "C", "", fMin, fMax);
     }
     
     else {
       
     f1 = new TF1 ("ArgFdtL", ArgFdtL, fMin ,fMax, 2);
-    // atan( - exp10( - x[0] ) * par[0] / ( par[1] * 2 * M_PI )  )
+    // atan( - 1.0 * ( par[0] / ( par[1] * 2 * M_PI * exp10( x[0] ) ) ) )
       f1->FixParameter( 0, rL );
       f1->SetParameter( 1, I[comp] );
+      f1->SetParName  ( 0, "R [ohm]");
+      f1->SetParName  ( 1, "L [H]");
 
-      targ->Fit("ArgFdtC", "L", "", fMin, fMax);
+      targ->Fit("ArgFdtL", "C", "", fMin, fMax);
       
     }
 
@@ -421,7 +440,7 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     ///////////////////////////////////////////////////////////
     /// Print eps
     
-    std::string OutFilePrefix = "./c3/C3_P1_NonLinFit_";
+    std::string OutFilePrefix = "./c3/C3_P1_";
     std::string OutFileExtension = ".eps";
     std::string OutFileName = OutFilePrefix+CompoName[comp]+OutFileExtension;
     
@@ -517,7 +536,8 @@ double ModFdtL ( double * x, double * par )
 { return sqrt( 1 / ( 1 + exp10( -2 * x[0] ) * 4 * M_PI * M_PI * par[0] * par[0] / (par[1] * par[1]) ) ); }
 
 double ArgFdtL ( double * x, double * par )
-{ return atan( - exp10( - x[0] ) * par[0] / ( par[1] * 2 * M_PI )  ); }
+{ return atan( - 1.0 * ( par[0] / ( par[1] * 2 * M_PI * exp10( x[0] ) ) ) ); }
+
 
 
 

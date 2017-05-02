@@ -20,8 +20,12 @@
 #include "./c1/src/P3_1_diod.cpp"
 //#include "./c2/src/P1_1_trueRMS.cpp"
 #include "./c3/src/P1_impedenze_fdt.cpp"
+<<<<<<< Updated upstream
 #include "./c3/src/P2_RL_impulsata.cpp"
 #include "./c3/src/P2_RC_impulsata.cpp"
+=======
+#include "./c4/src/P1_RLC_DC.cpp"
+>>>>>>> Stashed changes
 
 
 int main( int argc, char * argv[]){
@@ -31,11 +35,11 @@ int main( int argc, char * argv[]){
   ///////////////////////////////////////////////////////////
   /// Istanzia finestre grafiche, canvas e pads
 
-  TApplication* x1 = new TApplication( "x1", &argc, argv);
-  TCanvas     * Canv0 = new TCanvas     ( "Canv0", "Canv0", 950, 950 );
-// 	 	Canv0->Divide(2,1);
-		
-		
+  TApplication* x1 = new TApplication( "x1", 0, NULL);
+  TCanvas     * Canv0 = new TCanvas     ( "Canv0", "Canv0", 0,0,900,500 );
+
+  
+  
   ///////////////////////////////////////////////////////////
   /// Laboratorio
 //------------ C1 ---------------
@@ -50,6 +54,14 @@ int main( int argc, char * argv[]){
 //	 C3_P2_RC_impulsata( Canv0 );
 
 
+<<<<<<< Updated upstream
+=======
+//   P3_1_diod( Canv0 );	// C1
+//   P1_1_trueRMS( Canv0 );	// C2
+//   P1_impedenze_fdt( Canv0 );	// C3
+  P1_RLC_DC( Canv0 );		// C4
+
+>>>>>>> Stashed changes
   
 //  x1->Run();
 
