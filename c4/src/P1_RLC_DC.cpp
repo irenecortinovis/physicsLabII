@@ -46,6 +46,8 @@ namespace gVar4{
   // osservabili
   std::vector <double>  t   	;	// tempo
   std::vector <double>  Vb  	;	// Vb
+  std::vector <double>  eV  	;	// errore assoluto su V
+  std::vector <double>  et  	;	// errore assoluto su t
   
 
   // raccoglitore dati
@@ -78,7 +80,7 @@ namespace gVar4{
   double I;
   
   // Errori relativi
-  double errR = 1*exp10(-2);	//  ERRORE RELATIVO sulle resistenze 1.0%
+  double errR = 1*exp10(-2);	//  ERRORE RELATIVO su ogni resistenza 1.0%
     
   // Errori assoluti
   double sigmaV = 0.08;		//  ERRORE ASSOLUTO sulla ddp generata in [volt]
@@ -96,8 +98,8 @@ double SovraDC          ( double *, double *  );
 // funzioni calcolo valori iniziali
 double Gamma( double, double );
 double Pulsa( double, double, double );
-double SottoFase ( double, double, double );
-double SottoA    ( double, double, double );
+double Fase ( double, double, double );
+double A    ( double, double, double, double );
 void   PrintParIniz( double, double, double, double );
 
 
@@ -119,12 +121,9 @@ void P1_RLC_DC( TCanvas * Canv0 ) {
     std::string file2 = "P1_critico.txt";
     std::string file3 = "P1_sovra.txt";
   
-  class stat1 sotto ( path, file1 , 2, '\t', 3 );
-  class stat1 criti ( path, file2 , 2, '\t', 3 );
-  class stat1 sovra ( path, file3 , 2, '\t', 3 );
-  
-  Stat::calc( &sovra.pData->at(0) );
-  Stat::calc( &sovra.pData->at(1) );
+  class stat1 sotto ( path, file1 , 4, '\t', 3 );
+  class stat1 criti ( path, file2 , 4, '\t', 3 );
+  class stat1 sovra ( path, file3 , 4, '\t', 3 );
   
   // raggruppo i quattro oggetti in un array
   gVar4::ptr[0] = &sotto;
@@ -132,16 +131,16 @@ void P1_RLC_DC( TCanvas * Canv0 ) {
   gVar4::ptr[2] = &sovra;
 
   // etichette
-  gVar4::CompoName[0] = "Smz-Sotto";
-  gVar4::CompoName[1] = "Smz-Criti";
-  gVar4::CompoName[2] = "Smz-Sovra";
+  gVar4::CompoName[0] = "Sotto-smorz";
+  gVar4::CompoName[1] = "Smorz-critic";
+  gVar4::CompoName[2] = "Sovra-smorz";
   
   // Resistenze
   gVar4::r   = 50; 	// resistenza interna del generatore - Ohm
   gVar4::rL  = 50; 	// resistenza interna dell'induttore - Ohm
   
-  gVar4::R[0] =  100; 	// Ohm
-  gVar4::R[1] = 2400;	// critico
+  gVar4::R[0] =   100; 	// Ohm
+  gVar4::R[1] =  2400;	// critico
   gVar4::R[2] = 10000;	// sovra
   
   // Capacità - valori iniziali
@@ -170,10 +169,12 @@ void FitData( TCanvas * Canv0, int comp )
   
   using namespace gVar4;
   
-  std::cout << " ---------------------------- " << "\n";
+  std::cout << " --------------------- " << CompoName[comp] << " --------------------- " << "\n";
       
   t   	= ptr[comp]->pData->at(0);
   Vb  	= ptr[comp]->pData->at(1);
+  eV   	= ptr[comp]->pData->at(2);
+  et   	= ptr[comp]->pData->at(3);
   
   size = Stat::fsize( &t );
   fMin = Stat::fmin ( &t );
@@ -181,41 +182,42 @@ void FitData( TCanvas * Canv0, int comp )
   
   PrintParIniz( R[comp] + r + rL, I, C, V0 );
 
+  
   TGraphErrors* mod  = new TGraphErrors ( size );
     mod->GetXaxis()->SetTitle("t [s]");
     mod->GetYaxis()->SetTitle("I(t) [mu A]");
-    mod->SetTitle( " title " );
+    mod->SetTitle( CompoName[comp].c_str() );
     mod->SetMarkerColor(4);
     mod->SetMarkerStyle(21);
     
 
-  // riempito all'occorrenza
   TF1  *f1 = new TF1();
 
     
     for (int i = 0; i< size; i++) {
       
-       y = (Vb.at(i) * exp10(-3)) / ( R[comp] + r + rL );
-      sy = sqrt( pow( sigmaV*( 1/ Vb.at(i) ), 2)  + pow( 3*errR, 2) ) * fabs(y);	// propagazione errore su y
-       
+       y = ( Vb.at(i) * exp10(-3) ) / ( R[comp] + r + rL );
+      sy = fabs( eV.at(i) * exp10(-3) / ( R[comp] + r + rL ) ) + errR *fabs(y) ;
+      
        x = t.at(i) * exp10(-6);
-      sx = 0.000001;
+      sx = fabs( et.at(i)* exp10(-6) );
       
       mod->SetPoint( i, x, y );
       mod->SetPointError( i, sx, sy );
     }
 
     
-    f1->Clear();
-        
     
     if ( comp == 0 ){ 		// Sotto-smorzamento
       
-      f1 = new TF1("SottoDC_completa", SottoDC_completa, fMin ,fMax, 4);
-	// 
+      f1->Clear();
+      f1 = new TF1("SottoDC_ridotta", SottoDC_ridotta, fMin ,fMax, 4);
+	// par[0] * exp( -par[1] * x[0] ) * ( 
+	//				      +par[1] * cos( par[2] * x[0] + par[3] )
+	//				      +par[2] * sin( par[2] * x[0] + par[3] )
 	
 	f1->SetParName  ( 0, " A:");
-	f1->SetParameter( 0,  SottoA    ( R[comp] + r + rL, I, C ) * V0 );
+	f1->SetParameter( 0,  C*V0 );
 	
 	f1->SetParName  ( 1, "gamm:");
 	f1->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
@@ -224,15 +226,16 @@ void FitData( TCanvas * Canv0, int comp )
 	f1->SetParameter( 2,  Pulsa( R[comp] + r + rL, I, C ) );
 	  
 	f1->SetParName  ( 3, "fase:");
-	f1->SetParameter( 3,  SottoFase ( R[comp] + r + rL, I, C) );
+	f1->SetParameter( 3,  0 );
 
-	mod->Fit("SottoDC_completa", "C", "", fMin, fMax);
+	mod->Fit("SottoDC_ridotta", "C", "", fMin, fMax);
     }
     
 
     
     if ( comp == 1 ) { 	// critico
       
+      f1->Clear();
       f1 = new TF1("critico","[0]*[1]*[1]*x*exp(-[1]*x)",fMin,fMax); 
 	//
       
@@ -250,29 +253,30 @@ void FitData( TCanvas * Canv0, int comp )
 
     if ( comp == 2 ){	// Sovra-smorzamento
       
-//         f1 = new TF1("SovraDC", SovraDC, fMin ,fMax, 3);
-// 	// 
-// 	
-// 	f1->SetParName  ( 0, " A:");
-// 	f1->SetParameter( 0,  V0/ ( 2*I*Pulsa( R[comp] + r + rL, I, C ) )  );
-// 	
-// 	f1->SetParName  ( 1, "gamm:");
-// 	f1->FixParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
-// 	
-// 	f1->SetParName  ( 2, "puls:");
-// 	f1->FixParameter( 2,  Pulsa     ( R[comp] + r + rL, I, C ) );
+	f1->Clear();
+        f1 = new TF1("SovraDC", SovraDC, fMin ,fMax, 3);
+	// 
 	
-    f1 = new TF1("sovrasmorzato","[0]*(exp(-x*([2]-[1])) - exp(-x*([2]+[1])) )",fMin,fMax);
-    //[0]=1/2*Q0R*(omega0)^2 [1]= beta [2]=gamma
-    f1->SetParName(0,"1/2*RQ_0*(omega_0)^2");
-    f1->SetParName(1,"beta");
-    f1->SetParName(2,"gamma");
+	f1->SetParName  ( 0, " A:");
+	f1->SetParameter( 0,  V0/ ( 2*I*Pulsa( R[comp] + r + rL, I, C ) )  );
 	
-    f1->SetParameter(0, 5.0/(0.0657 * 2.0 * 74000) );
-    f1->SetParameter(1, 74000);
-    f1->SetParameter(2, 76000);
+	f1->SetParName  ( 1, "gamm:");
+	f1->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
 	
-    mod->Fit("sovrasmorzato", "C", "", fMin, fMax);
+	f1->SetParName  ( 2, "puls:");
+	f1->SetParameter( 2,  Pulsa     ( R[comp] + r + rL, I, C ) );
+	
+//     f1 = new TF1("sovrasmorzato","[0]*(exp(-x*([2]-[1])) - exp(-x*([2]+[1])) )",fMin,fMax);
+//     //[0]=1/2*Q0R*(omega0)^2 [1]= beta [2]=gamma
+//     f1->SetParName(0,"1/2*RQ_0*(omega_0)^2");
+//     f1->SetParName(1,"beta");
+//     f1->SetParName(2,"gamma");
+// 	
+//     f1->SetParameter(0, 5.0/(0.0657 * 2.0 * 74000) );
+//     f1->SetParameter(1, 74000);
+//     f1->SetParameter(2, 76000);
+	
+    mod->Fit("SovraDC", "C", "", fMin, fMax);
     
     }
 
@@ -301,13 +305,13 @@ void FitData( TCanvas * Canv0, int comp )
 
 double SottoDC_ridotta ( double * x, double * par ) 
 { 
-  double y = par[0] * exp( -par[1] * x[0] ) * cos( par[2] * x[0] + par[3] ); 
+  double y = par[0] * exp( -par[1] * x[0] ) * sin( par[2] * x[0] + par[3] ); 
   return y;  }
 
 double SottoDC_completa ( double * x, double * par )
 { double y = par[0] * exp( -par[1] * x[0] ) * ( 
-					      -par[1] * cos( par[2] * x[0] + par[3] )
-					      -par[2] * sin( par[2] * x[0] + par[3] )
+					      +par[1] * cos( par[2] * x[0] + par[3] )
+					      +par[2] * sin( par[2] * x[0] + par[3] )
 					      );
   return y;}
 
@@ -321,16 +325,16 @@ double SovraDC ( double * x, double * par )
 
 double Gamma( double R, double L )          { return 0.5* R/L; };
 double Pulsa( double R, double L, double C) { return sqrt( fabs( -(R*R / (4*L*L)) + (1/(C*L)) ) ); };
-double SottoFase ( double R, double L, double C) { return atan( ( (1.0/(R*C)) - (0.5*R/L) )/ Pulsa( R, L, C ) ); };
-double SottoA    ( double R, double L, double C) { return - C / cos( SottoFase(R, L, C)); };
+double Fase ( double R, double L, double C) { return atan( ( (1.0/(R*C)) - (0.5*R/L) )/ Pulsa( R, L, C ) ); };
+double A    ( double R, double L, double C, double V ) { return C*V / cos( Fase(R, L, C)); };
 
 void PrintParIniz( double R, double L, double C, double V ){
   using namespace gVar4;
   std::cout << "\n---------------------------------" << "\n"
   << "Gamma       : " 	<<  Gamma( R, L )	  	<< "\n"
   << "Pulsa       : " 	<<  Pulsa( R, L, C) 	<< "\n"
-  << "Sotto-Fase  : "	<<  SottoFase ( R, L, C) 	<< "\n"
-  << "Sotto-A     : " 	<<  SottoA    ( R, L, C)*V 	<< "\n"
+  << "Fase (sotto)  : "	<<  Fase ( R, L, C) 	<< "\n"
+  << "A (sotto)     : " 	<<  A    ( R, L, C, V) 	<< "\n"
   << "---------------------------------" << "\n\n";
   
 return; };

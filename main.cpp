@@ -17,11 +17,11 @@
 #include <TCanvas.h>
 
 
-// #include "./c1/src/P3_1_diod.cpp"
-// #include "./c2/src/P1_1_trueRMS.cpp"
-// #include "./c3/src/P1_impedenze_fdt.cpp"
-// #include "./c3/src/P2_RL_impulsata.cpp"
-// #include "./c3/src/P2_RC_impulsata.cpp"
+#include "./c1/src/P3_1_diod.cpp"
+#include "./c2/src/P1_1_trueRMS.cpp"
+#include "./c3/src/P1_impedenze_fdt.cpp"
+#include "./c3/src/P2_RL_impulsata.cpp"
+#include "./c3/src/P2_RC_impulsata.cpp"
 #include "./c4/src/P1_RLC_DC.cpp"
 #include "./c4/src/P2_RLC_AC.cpp"
 
@@ -59,8 +59,8 @@ int main( int argc, char * argv[]){
 //	 C3_P2_RC_impulsata( Canv0 );
 
 //------------ C4 ---------------
-//   P1_RLC_DC( Canv0 );	// C4
-  P2_RLC_AC( Canv0 );
+  P1_RLC_DC( Canv0 );	// C4
+//   P2_RLC_AC( Canv0 );
 
   
 //  x1->Run();
