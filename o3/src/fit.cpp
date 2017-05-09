@@ -44,30 +44,37 @@ int main(int argc, char const *argv[]) {
 
 	TCanvas * c1 = new TCanvas("c1", "Reticolo d",0,0,900,500);
 	
-	TCanvas * c2 = new TCanvas("c2", "Reticolo lambda",0,0,900,500);
+	TCanvas * c2 = new TCanvas("c2", "Reticolo lambda",950,0,900,500);
 	c2->Divide(2,1);
 	
-	//TCanvas * c3 = new TCanvas("c3", "Prisma",0,600,900,500);
+	TCanvas * c3 = new TCanvas("c3", "Prisma",1950,0,900,500);
+
 
 //-----------------Definizione grafici
 
-	//parte 1 determinazione di d
+//parte 1 determinazione di d
 
 	TGraphErrors * Gerr1 = new TGraphErrors("../data/P1_1_d.txt", "%lg %lg %lg %lg");
 	Gerr1->GetXaxis()->SetTitle("N");
 	Gerr1->GetYaxis()->SetTitle("sen(theta)");
 
-	//parte 1 determinazione di lambda (diversi materiali)
+//parte 1 determinazione di lambda (diversi materiali)
 
 	//materiale 1
-	TGraphErrors * Gerr2 = new TGraphErrors("../data/P1_1_lambda_materiale1.txt", "%lg %lg %lg %lg");
+	TGraphErrors * Gerr2 = new TGraphErrors("../data/P1_2_lambda_materiale1.txt", "%lg %lg %lg %lg");
 	Gerr2->GetXaxis()->SetTitle("N");
 	Gerr2->GetYaxis()->SetTitle("sen(theta)");
 
 	//materiale 2
-	TGraphErrors * Gerr3 = new TGraphErrors("../data/P1_1_lambda_materiale2.txt", "%lg %lg %lg %lg");
+	TGraphErrors * Gerr3 = new TGraphErrors("../data/P1_2_lambda_materiale2.txt", "%lg %lg %lg %lg");
 	Gerr3->GetXaxis()->SetTitle("N");
 	Gerr3->GetYaxis()->SetTitle("sen(theta)");
+
+//parte 2 determinazione di a e b in cauchy
+
+	TGraphErrors * Gerr4 = new TGraphErrors("../data/P2_1_cauchy.txt", "%lg %lg %lg %lg");
+	Gerr4->GetXaxis()->SetTitle("n(lambda)");
+	Gerr4->GetYaxis()->SetTitle("lambda");
 
 	
 //---------------------------Determinazione di d
@@ -128,6 +135,26 @@ int main(int argc, char const *argv[]) {
 
 	Gerr3->Fit(fit3,"C");
 	double lambda_materiale2 = fit3->GetParameter(0);
+
+
+//---------------------------Determinazione di a e b nella formula di Cauchy
+
+	TF1 * fit4 = new TF1("prisma a b cauchy", "[0]+[1]/(x*x)",0,1000); //[nm]
+	//[0]=a, [1]=b
+	fit3->SetParName(0,"a");
+	fit3->SetParName(1, "b [nm^2]");
+	//fit3->SetParameter(0,); //
+	//fit3->SetParameter(1,); //[nm^2]
+
+	c3->cd();
+	Gerr4->Draw("AP");
+	Gerr4->SetMarkerColor(1);
+	Gerr4->SetMarkerSize(1);
+	Gerr4->SetMarkerStyle(21);
+
+	Gerr4->Fit(fit4,"C");
+	double a_cauchy = fit4->GetParameter(0);
+	double b_cauchy = fit4->GetParameter(1);
 
 
 
