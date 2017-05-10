@@ -41,9 +41,23 @@ double round_to_digits(double value, int digits)
         return 0.0;
 
     double factor = pow(10.0, digits - ceil(log10(fabs(value))));
-    return round(value * factor) / factor;   
+    return round(value * factor) / factor;
 }
 
+//----------------- Funzioni errori ----------------//
+//----------- Parte 2_2 ------------//
+
+//Errore di indice di rifrazione N
+double errN(double alfa, double alfa_err, double delta, double delta_err){
+	double alfa_derivative = pow( cos(alfa + 0.5*delta) , 2) / pow( sin(0.5*alfa) , 2 );
+	double delta_derivative = pow( cos(0.5 * (alfa+delta) ) , 2 );
+	return sqrt( alfa_err*alfa_err*alfa_derivative + delta_err*delta_err*delta_derivative ) / ( 2*sin(0.5*alfa) );
+}
+
+//Errore della lunghezza d'onda Lambda
+double errLambda(double N, double err_N, const double b, const double err_b, const double a, const double err_a ){
+	return sqrt( err_b*err_b/b + b/pow( (N-a), 2 )*( err_a*err_a + err_N*err_N) ) / (2*sqrt(N-a) );
+}
 
 
 
@@ -56,10 +70,10 @@ int main(int argc, char const *argv[]) {
 //----------------- Definizione canvas -----------------
 
 	TCanvas * c1 = new TCanvas("c1", "Reticolo d",0,0,900,500);
-	
+
 	//TCanvas * c2 = new TCanvas("c2", "Reticolo lambda",950,0,900,500);
 	//c2->Divide(2,1);
-	
+
 	TCanvas * c3 = new TCanvas("c3", "Prisma",1950,0,900,500);
 
 
@@ -101,7 +115,7 @@ int main(int argc, char const *argv[]) {
 //------------ PARTE 1 ----------------
 //-------------------------------------
 
-	
+
 //---------------------------Determinazione di d
 
 	std::cout << "\n\n-------------- Determinazione del passo del reticolo d ------------\n" << std::endl;
@@ -122,8 +136,8 @@ int main(int argc, char const *argv[]) {
 	Gerr1->SetMarkerStyle(21);
 
 	Gerr1->Fit(fit1,"C");
-	double d_reticolo = fit1->GetParameter(0);
-	double d_reticolo_err = fit1->GetParError(0);
+	const double d_reticolo = fit1->GetParameter(0);
+	const double d_reticolo_err = fit1->GetParError(0);
 	std::cout << "\nRISULTATO" << std::endl;
 	std::cout << "Passo del reticolo: " << round(d_reticolo) <<
 	" +/- " << round(d_reticolo_err) << " nm" << std::endl;
@@ -188,7 +202,7 @@ int main(int argc, char const *argv[]) {
 	std::cout << "\n\n-------------- Determinazione dei coefficienti A e B" <<
 				 "nella formula di Cauchy ------------\n" << std::endl;
 
-	
+
 	TF1 * fit4 = new TF1("prisma a b cauchy", "[0]+[1]/(x*x)",0,2); //[nm]
 	//[0]=a, [1]=b
 	fit4->SetParName(0,"a");
@@ -196,7 +210,7 @@ int main(int argc, char const *argv[]) {
 	fit4->SetParameter(0,1); //
 	fit4->SetParameter(1,10000); //[nm^2]
 
-	
+
 	c3->cd();
 	Gerr4->Draw("AP");
 	Gerr4->SetMarkerColor(1);
@@ -204,14 +218,14 @@ int main(int argc, char const *argv[]) {
 	Gerr4->SetMarkerStyle(21);
 
 	Gerr4->Fit(fit4,"C");
-	double a_cauchy = fit4->GetParameter(0);
-	double b_cauchy = fit4->GetParameter(1);
-	double a_cauchy_err = fit4->GetParError(0);
-	double b_cauchy_err = fit4->GetParError(1);
+	const double a_cauchy = fit4->GetParameter(0);
+	const double b_cauchy = fit4->GetParameter(1);
+	const double a_cauchy_err = fit4->GetParError(0);
+	const double b_cauchy_err = fit4->GetParError(1);
 	std::cout << "\nRISULTATO" << std::endl;
-	std::cout << "A: " << round_to_digits(a_cauchy,4) << 
+	std::cout << "A: " << round_to_digits(a_cauchy,4) <<
 	" +/- " << round_to_digits(a_cauchy_err,1) << std::endl;
-	std::cout << "B: " << round_to_digits(b_cauchy,2) << 
+	std::cout << "B: " << round_to_digits(b_cauchy,2) <<
 	" +/- " << round_to_digits(b_cauchy_err,1) << " nm^2" << std::endl;
 
 
@@ -251,12 +265,14 @@ int main(int argc, char const *argv[]) {
 		lampadaC[counter].delta = x;
 		lampadaC[counter].delta_err = y;
 		lampadaC[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
-		lampadaC[counter].n_err = y*0.5*cos(0.5*(alpha + x))/sin(0.5*alpha);
+		lampadaC[counter].n_err = errN(alpha, alpha_err,
+									   lampadaC[counter].delta, lampadaC[counter].delta_err);
 		lampadaC[counter].lambda = sqrt(b_cauchy/(lampadaC[counter].n-a_cauchy));
-		lampadaC[counter].lambda_err = lampadaC[counter].n_err*0.5*sqrt(b_cauchy/(pow((lampadaC[counter].n-a_cauchy),3)));
+		lampadaC[counter].lambda_err = errLambda(lampadaC[counter].n, lampadaC[counter].n_err,
+												 b_cauchy, b_cauchy_err, a_cauchy, a_cauchy_err);
 		//print
-		std::cout << "Colore:\t" << lampadaC[counter].colore << 
-					 "\nlambda:\t" << round(lampadaC[counter].lambda) << 
+		std::cout << "Colore:\t" << lampadaC[counter].colore <<
+					 "\nlambda:\t" << round(lampadaC[counter].lambda) <<
 					 " +/- " << round(lampadaC[counter].lambda_err) << "\n" << std::endl;
 		counter++;
 	}
@@ -279,17 +295,19 @@ int main(int argc, char const *argv[]) {
 	//riempio vettore di struct lampadaD
 	while(infileD >> colore >> x >> y)
 	{
-		lampadaC.push_back(misura());
-		lampadaC[counter].colore = colore;
-		lampadaC[counter].delta = x;
-		lampadaC[counter].delta_err = y;
-		lampadaC[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
-		lampadaC[counter].n_err = y*0.5*cos(0.5*(alpha + x))/sin(0.5*alpha);
-		lampadaC[counter].lambda = sqrt(b_cauchy/(lampadaC[counter].n-a_cauchy));
-		lampadaC[counter].lambda_err = lampadaC[counter].n_err*0.5*sqrt(b_cauchy/(pow((lampadaC[counter].n-a_cauchy),3)));
+		lampadaD.push_back(misura());
+		lampadaD[counter].colore = colore;
+		lampadaD[counter].delta = x;
+		lampadaD[counter].delta_err = y;
+		lampadaD[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
+		lampadaD[counter].n_err = errN(alpha, alpha_err,
+								   lampadaD[counter].delta, lampadaD[counter].delta_err);
+		lampadaD[counter].lambda = sqrt(b_cauchy/(lampadaD[counter].n-a_cauchy));
+		lampadaD[counter].lambda_err = errLambda(lampadaD[counter].n, lampadaD[counter].n_err,
+												 b_cauchy, b_cauchy_err, a_cauchy, a_cauchy_err);
 		//print
-		std::cout << "Colore:\t" << lampadaC[counter].colore << 
-					 "\nlambda:\t" << round(lampadaC[counter].lambda) << 
+		std::cout << "Colore:\t" << lampadaC[counter].colore <<
+					 "\nlambda:\t" << round(lampadaC[counter].lambda) <<
 					 " +/- " << round(lampadaC[counter].lambda_err) << "\n" << std::endl;
 		counter++;
 	}
@@ -297,7 +315,7 @@ int main(int argc, char const *argv[]) {
 	infileD.close();
 
 //-------------------------------------
-	
+
 	Grafica->Run();
 
 	return 0;
