@@ -70,12 +70,7 @@ int main(int argc, char const *argv[]) {
 //----------------- Definizione canvas -----------------
 
 	TCanvas * c1 = new TCanvas("c1", "Reticolo d",0,0,900,500);
-
-	//TCanvas * c2 = new TCanvas("c2", "Reticolo lambda",950,0,900,500);
-	//c2->Divide(2,1);
-
 	TCanvas * c3 = new TCanvas("c3", "Prisma",1950,0,900,500);
-
 
 
 //----------------- Definizione grafici -----------------
@@ -87,19 +82,6 @@ int main(int argc, char const *argv[]) {
 	Gerr1->GetXaxis()->SetTitle("N");
 	Gerr1->GetYaxis()->SetTitle("sen(theta)");
 
-/*
-//parte 1 determinazione di lambda (diversi materiali)
-
-	//materiale 1
-	TGraphErrors * Gerr2 = new TGraphErrors("../data/P1_2_lambda_lampadaD.txt", "%lg %lg %lg %lg");
-	Gerr2->GetXaxis()->SetTitle("N");
-	Gerr2->GetYaxis()->SetTitle("sen(theta)");
-
-	//materiale 2
-	TGraphErrors * Gerr3 = new TGraphErrors("../data/P1_2_lambda_lampadaC.txt", "%lg %lg %lg %lg");
-	Gerr3->GetXaxis()->SetTitle("N");
-	Gerr3->GetYaxis()->SetTitle("sen(theta)");
-*/
 //parte 2 determinazione di a e b in cauchy
 
 	TGraphErrors * Gerr4 = new TGraphErrors("../data/P2_1_cauchy.txt", "%lg %lg %lg %lg");
@@ -145,51 +127,7 @@ int main(int argc, char const *argv[]) {
 
 //---------------------------Determinazione di lambda per diversi materiali
 // to do: medie anziché grafici
-/*
-	//----------lampada D
 
-	std::cout << "\n\n-------------- Determinazione di lambda per lampada D ------------\n" << std::endl;
-
-
-	TF1 * fit2 = new TF1("reticolo lambda lampada D", "[0]/[1]*x",0,3);
-	//[0]= lambda
-	fit2->SetParName(0,"lambda [nm]");
-	fit2->SetParName(1, "d reticolo [nm]");
-	fit2->SetParameter(0,500); //[nm]
-	fit2->FixParameter(1,d_reticolo); //[nm]
-
-	c2->cd(1);
-	Gerr2->Draw("AP");
-	Gerr2->SetMarkerColor(1);
-	Gerr2->SetMarkerSize(1);
-	Gerr2->SetMarkerStyle(21);
-
-	Gerr2->Fit(fit2,"C");
-	double lambda_materiale1 = fit2->GetParameter(0);
-
-
-	//----------lampada C
-
-	std::cout << "\n\n-------------- Determinazione di lambda per lampada C ------------\n" << std::endl;
-
-
-	TF1 * fit3 = new TF1("reticolo lambda lampada D", "[0]/[1]*x",0,10);
-	//[0]= lambda
-	fit3->SetParName(0,"lambda [nm]");
-	fit3->SetParName(1, "d reticolo [nm]");
-	fit3->SetParameter(0,500); //[nm]
-	fit3->FixParameter(1,d_reticolo); //[nm]
-
-	c2->cd(2);
-	Gerr3->Draw("AP");
-	Gerr3->SetMarkerColor(1);
-	Gerr3->SetMarkerSize(1);
-	Gerr3->SetMarkerStyle(21);
-
-	Gerr3->Fit(fit3,"C");
-	double lambda_materiale2 = fit3->GetParameter(0);
-
-*/
 
 
 //-------------------------------------
