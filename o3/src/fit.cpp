@@ -80,7 +80,7 @@ int main(int argc, char const *argv[]) {
 //---------------------------Determinazione di d
 
 	//double lambdaNa = 589; //[nm]
-	TF1 * fit1 = new TF1("reticolo_d", "[1]/[0]*x",0,10);
+	TF1 * fit1 = new TF1("reticolo_d", "[1]/[0]*x",0,3);
 	//[0]= d
 	fit1->SetParName(0,"d [nm]");
 	fit1->SetParName(1, "lambda Na yellow [nm]");
@@ -101,7 +101,7 @@ int main(int argc, char const *argv[]) {
 
 	//----------materiale 1
 
-	TF1 * fit2 = new TF1("reticolo lambda materiale 1", "[0]/[1]*x",0,10);
+	TF1 * fit2 = new TF1("reticolo lambda materiale 1", "[0]/[1]*x",0,3);
 	//[0]= lambda
 	fit2->SetParName(0,"lambda [nm]");
 	fit2->SetParName(1, "d reticolo [nm]");
@@ -138,14 +138,15 @@ int main(int argc, char const *argv[]) {
 
 
 //---------------------------Determinazione di a e b nella formula di Cauchy
-
-	TF1 * fit4 = new TF1("prisma a b cauchy", "[0]+[1]/(x*x)",0,1000); //[nm]
+	
+	TF1 * fit4 = new TF1("prisma a b cauchy", "[0]+[1]/(x*x)",0,2); //[nm]
 	//[0]=a, [1]=b
-	fit3->SetParName(0,"a");
-	fit3->SetParName(1, "b [nm^2]");
-	//fit3->SetParameter(0,); //
-	//fit3->SetParameter(1,); //[nm^2]
+	fit4->SetParName(0,"a");
+	fit4->SetParName(1, "b [nm^2]");
+	fit4->SetParameter(0,1); //
+	fit4->SetParameter(1,10000); //[nm^2]
 
+	
 	c3->cd();
 	Gerr4->Draw("AP");
 	Gerr4->SetMarkerColor(1);
@@ -155,7 +156,7 @@ int main(int argc, char const *argv[]) {
 	Gerr4->Fit(fit4,"C");
 	double a_cauchy = fit4->GetParameter(0);
 	double b_cauchy = fit4->GetParameter(1);
-
+	
 
 
 
