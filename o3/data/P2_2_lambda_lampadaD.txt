@@ -1,0 +1,7 @@
+rosso	0.830	0.003
+arancione	0.840	0.003
+giallo	0.841	0.003
+verde	0.847	0.003
+azzurroverde	0.850	0.003
+blu	0.876	0.003
+viola	0.888	0.003
