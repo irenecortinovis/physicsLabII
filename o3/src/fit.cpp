@@ -18,20 +18,10 @@ c++ ../src/fit.cpp -o fit.o `root-config --cflags --glibs`
 #include <TGraph.h>
 #include <TApplication.h>
 #include <TGraphErrors.h>
+#include <TStyle.h>
+
 
 using namespace std;
-
-//struct per ogni misura in P2_2
-struct misura
-{
-  string colore;
-  double delta;
-  double delta_err;
-  double n;
-  double n_err;
-  double lambda;
-  double lambda_err;
-};
 
 
 //http://stackoverflow.com/questions/13094224/a-c-routine-to-round-a-float-to-n-significant-digits
@@ -44,6 +34,63 @@ double round_to_digits(double value, int digits)
     return round(value * factor) / factor;
 }
 
+
+/////////////////////////////////////////
+/////////////////PARTE 1/////////////////
+/////////////////////////////////////////
+struct misuraP1{
+  string colore;
+  double lambda;
+  double lambda_err;
+};
+
+//----------------- Funzioni errori ----------------//
+
+//N=1 per tutte le misure quindi non lo metto
+double Lambda_P1_2(double sinAngolo, const double d){
+  return d/1.*sinAngolo;
+}
+double LambdaErr_P1_2(double sinAngolo, double err_sinAngolo, const double d, const double err_d){
+  return sqrt( pow (err_d/1.*sinAngolo , 2 ) + pow ( d/(sinAngolo*sinAngolo)*err_sinAngolo,2) );
+}
+
+//----------------funzioni stampa tabelle latex
+// E' IMPORTANTE CHE GLI SI PASSI UNA VARIABILE STRING SENNO' FA SBATTI DI COMPILAZIONE
+void LatexTableBegin(std::ofstream& OutputFile, std::string& caption){
+  //File deve essere open
+  OutputFile<<"\\begin{table}[htbp]\n";
+  OutputFile<<"\\begin{center}\n";
+  OutputFile<<"\\caption{"  <<caption <<"}\n";
+  OutputFile<<"\\begin{tabular}{|c|c|c|}\n";
+  OutputFile<<"\\hline\n";
+  return;
+}
+
+// E' IMPORTANTE CHE GLI SI PASSI UNA VARIABILE STRING SENNO' FA SBATTI DI COMPILAZIONE
+void LatexTableEnd(std::ofstream& OutputFile, std::string& label){
+  //File deve essere open
+  OutputFile<<"\\hline\n";
+  OutputFile<<"\\end{tabular}\n";
+  OutputFile<<"\\end{center}\n";
+  OutputFile<<"\\label{"  <<label <<"}\n";
+  OutputFile<<"\\end{table}\n";
+  return;
+}
+
+/////////////////////////////////////////
+/////////////////PARTE 2/////////////////
+/////////////////////////////////////////
+//struct per ogni misura in P2_2
+struct misuraP2
+{
+  string colore;
+  double delta;
+  double delta_err;
+  double n;
+  double n_err;
+  double lambda;
+  double lambda_err;
+};
 //----------------- Funzioni errori ----------------//
 //----------- Parte 2_2 ------------//
 
@@ -62,6 +109,7 @@ double errLambda(double N, double err_N, const double b, const double err_b, con
 
 
 
+
 int main(int argc, char const *argv[]) {
 
 	TApplication * Grafica = new TApplication("", NULL, NULL);
@@ -69,7 +117,11 @@ int main(int argc, char const *argv[]) {
 
 //----------------- Definizione canvas -----------------
 
+    gStyle->SetOptFit(1111);
+
 	TCanvas * c1 = new TCanvas("c1", "Reticolo d",0,0,900,500);
+	TCanvas * c2 = new TCanvas("c2", "Prisma",0,0,900,500);
+	c2->Divide(1,2);
 	TCanvas * c3 = new TCanvas("c3", "Prisma",1950,0,900,500);
 
 
@@ -89,7 +141,18 @@ int main(int argc, char const *argv[]) {
 	Gerr4->GetXaxis()->SetTitle("n(lambda)");
 	Gerr4->GetYaxis()->SetTitle("lambda");
 
+//parte 2 spettro di emissione delle lampade
 
+	//lampadaC
+	TH1F* histoP2C = new TH1F("Spettro di emissione lampada C","Spettro di emissione lampada C",300,400,700);
+	TH1F* histoP2D = new TH1F("Spettro di emissione lampada D","Spettro di emissione lampada D",300,400,700);
+
+
+//----------------- Preparazione file -----------------
+
+	std::ifstream InFile;
+	std::ofstream OutFile;
+	int counter = 0;
 
 
 
@@ -126,7 +189,137 @@ int main(int argc, char const *argv[]) {
 
 
 //---------------------------Determinazione di lambda per diversi materiali
-// to do: medie anziché grafici
+
+
+  double tempSin, tempErr;
+  std::string tempColore;
+  std:string caption = "a";
+
+/////////////////////LAMPADA B
+
+  InFile.open("../data/P1_2_lampadaB.txt", std::ios::in);
+
+  std::vector<misuraP1> LampadaB_P1;
+
+  counter = 0;
+  while (InFile >>tempColore >> tempSin >>tempErr){
+    LampadaB_P1.push_back(misuraP1() );
+    LampadaB_P1[counter].colore = tempColore;
+    LampadaB_P1[counter].lambda = Lambda_P1_2(tempSin, d_reticolo);
+    LampadaB_P1[counter].lambda_err =  LambdaErr_P1_2(tempSin,tempErr,d_reticolo,d_reticolo_err);
+    counter++;
+  }
+
+  InFile.close();
+
+  //Output tabella latex -------------------
+  OutFile.open("../build/O3_P1_2_LambdaB.tex", std::ios::out);
+
+  caption = "Spettro Lampada B";
+  LatexTableBegin(OutFile, caption);
+
+  OutFile
+  <<"Colore & Lungh.Onda [nm] & Errore \\\\ \n"
+  <<"\\hline\n";
+
+  for (size_t i = 0; i < counter; i++) {
+    OutFile
+    <<LampadaB_P1[i].colore <<" & "
+    <<round_to_digits(LampadaB_P1[i].lambda, 2) <<" & "
+    <<round_to_digits(LampadaB_P1[i].lambda_err, 1) <<" \\\\ \n";
+  }
+  // se si vuole inserire una label
+  caption = "label";
+  LatexTableEnd(OutFile, caption);
+
+  OutFile.close();
+
+  std::cout << "\nCreato file O3_P1_2_LambdaB.tex in build" << std::endl;
+
+
+////////////////////////////LAMPADA C
+  InFile.open("../data/P1_2_lampadaC.txt", std::ios::in);
+
+  std::vector<misuraP1> LampadaC_P1;
+
+  counter = 0;
+  while (InFile >>tempColore >> tempSin >>tempErr){
+    LampadaC_P1.push_back(misuraP1());
+    LampadaC_P1[counter].colore = tempColore;
+    LampadaC_P1[counter].lambda = Lambda_P1_2(tempSin, d_reticolo);
+    LampadaC_P1[counter].lambda_err =  LambdaErr_P1_2(tempSin,tempErr,d_reticolo,d_reticolo_err);
+    counter++;
+  }
+
+  InFile.close();
+
+  //Output tabella latex -------------------
+  OutFile.open("../build/O3_P1_2_LambdaC.tex", std::ios::out);
+  caption = "Spettro lampada C";
+
+  LatexTableBegin(OutFile, caption);
+
+  OutFile
+  <<"Colore & Lungh.Onda [nm] & Errore [nm]\\\\ \n"
+  <<"\\hline\n";
+
+  for (size_t i = 0; i < counter; i++) {
+    OutFile
+    <<LampadaC_P1[i].colore <<" & "
+    <<round_to_digits(LampadaC_P1[i].lambda, 2) <<" & "
+    <<round_to_digits(LampadaC_P1[i].lambda_err, 1) <<" \\\\ \n";
+  }
+  // se si vuole inserire una label
+  caption = "label";
+  LatexTableEnd(OutFile, caption);
+
+  OutFile.close();
+
+  std::cout << "Creato file O3_P1_2_LambdaC.tex in build" << std::endl;
+
+
+  /////////////////LAMPADA D (input: |Colore | Media(DX-SX)sinAngolo | ErrMedia sinAngolo |)
+  InFile.open("../data/P1_2_lampadaD.txt", std::ios::in);
+
+  std::vector<misuraP1> LampadaD_P1;
+
+  counter = 0;
+  while (InFile >>tempColore >> tempSin >>tempErr){
+    LampadaD_P1.push_back(misuraP1() );
+    LampadaD_P1[counter].colore = tempColore;
+    LampadaD_P1[counter].lambda = Lambda_P1_2(tempSin, d_reticolo);
+    LampadaD_P1[counter].lambda_err =  LambdaErr_P1_2(tempSin,tempErr,d_reticolo,d_reticolo_err);
+    counter++;
+  }
+
+  InFile.close();
+
+  //Output tabella latex -------------------
+  OutFile.open("../build/O3_P1_2_LambdaD.tex", std::ios::out);
+  caption = "Spettro Lampada D";
+
+  LatexTableBegin(OutFile, caption);
+
+  OutFile
+    <<"Colore & Lungh.Onda [nm] & Errore [nm]\\\\ \n"
+    <<"\\hline\n";
+
+  for (size_t i = 0; i < counter; i++) {
+    OutFile
+    <<LampadaD_P1[i].colore <<" & "
+    <<round_to_digits(LampadaD_P1[i].lambda, 2) <<" & "
+    <<round_to_digits(LampadaD_P1[i].lambda_err, 1) <<" \\\\ \n";
+  }
+  caption = "label";
+  LatexTableEnd(OutFile, caption);
+
+  OutFile.close();
+
+  std::cout << "Creato file O3_P1_2_LambdaD.tex in build" << std::endl;
+
+
+
+
 
 
 
@@ -143,8 +336,8 @@ int main(int argc, char const *argv[]) {
 
 	TF1 * fit4 = new TF1("prisma a b cauchy", "[0]+[1]/(x*x)",0,2); //[nm]
 	//[0]=a, [1]=b
-	fit4->SetParName(0,"a");
-	fit4->SetParName(1, "b [nm^2]");
+	fit4->SetParName(0,"A");
+	fit4->SetParName(1, "B [nm^2]");
 	fit4->SetParameter(0,1); //
 	fit4->SetParameter(1,10000); //[nm^2]
 
@@ -179,43 +372,70 @@ int main(int argc, char const *argv[]) {
 	const double alpha_err = 1*2*M_PI/360; //1 grado in radianti
 
 	//vettore di struct per le misure delle lampade C e D
-	vector<misura> lampadaC;
-	vector<misura> lampadaD;
+	vector<misuraP2> lampadaC_P2;
+	vector<misuraP2> lampadaD_P2;
 
 	//variabili per la lettura dei file
 	double x, y;
 	string colore;
-	int counter = 0;
+	counter = 0;
 
 	//--------------- lampada C --------------------
 
 	std::cout << "\n\n-------------- Determinazione di lambda per lampada C ------------\n" << std::endl;
 
 
-	std::ifstream infileC;
-	infileC.open("../data/P2_2_lambda_lampadaC.txt", std::ios::in);
+	InFile.open("../data/P2_2_lambda_lampadaC.txt", std::ios::in);
 
-	//riempio vettore di struct lampadaC
-	while(infileC >> colore >> x >> y)
+	//riempio vettore di struct lampadaC_P2
+	while(InFile >> colore >> x >> y)
 	{
-		lampadaC.push_back(misura());
-		lampadaC[counter].colore = colore;
-		lampadaC[counter].delta = x;
-		lampadaC[counter].delta_err = y;
-		lampadaC[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
-		lampadaC[counter].n_err = errN(alpha, alpha_err,
-									   lampadaC[counter].delta, lampadaC[counter].delta_err);
-		lampadaC[counter].lambda = sqrt(b_cauchy/(lampadaC[counter].n-a_cauchy));
-		lampadaC[counter].lambda_err = errLambda(lampadaC[counter].n, lampadaC[counter].n_err,
+		lampadaC_P2.push_back(misuraP2());
+		lampadaC_P2[counter].colore = colore;
+		lampadaC_P2[counter].delta = x;
+		lampadaC_P2[counter].delta_err = y;
+		lampadaC_P2[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
+		lampadaC_P2[counter].n_err = errN(alpha, alpha_err,
+									   lampadaC_P2[counter].delta, lampadaC_P2[counter].delta_err);
+		lampadaC_P2[counter].lambda = sqrt(b_cauchy/(lampadaC_P2[counter].n-a_cauchy));
+		histoP2C->Fill(lampadaC_P2[counter].lambda);
+		lampadaC_P2[counter].lambda_err = errLambda(lampadaC_P2[counter].n, lampadaC_P2[counter].n_err,
 												 b_cauchy, b_cauchy_err, a_cauchy, a_cauchy_err);
-		//print
-		std::cout << "Colore:\t" << lampadaC[counter].colore <<
-					 "\nlambda:\t" << round(lampadaC[counter].lambda) <<
-					 " +/- " << round(lampadaC[counter].lambda_err) << "\n" << std::endl;
 		counter++;
 	}
 
-	infileC.close();
+	InFile.close();
+
+	//disegno istogramma
+	c2->cd(1);
+	histoP2C->Draw();
+
+	//Output tabella latex -------------------
+	OutFile.open("../build/O3_P2_2_LambdaC.tex", std::ios::out);
+
+	caption = "Spettro Lampada C";
+	LatexTableBegin(OutFile, caption);
+
+	OutFile
+		<<"Colore & Lungh.Onda [nm] & Errore [nm]\\\\ \n"
+		<<"\\hline\n";
+
+	for (size_t i = 0; i < counter; i++)
+	{
+		OutFile
+			<<lampadaC_P2[i].colore <<" & "
+			<<round_to_digits(lampadaC_P2[i].lambda, 2) <<" & "
+			<<round_to_digits(lampadaC_P2[i].lambda_err, 1) <<" \\\\ \n";
+	}
+
+	// se si vuole inserire una label
+	caption = "label";
+	LatexTableEnd(OutFile, caption);
+
+	OutFile.close();
+
+	std::cout << "Creato file O3_P2_2_LambdaC.tex in build" << std::endl;
+
 
 
 
@@ -224,33 +444,59 @@ int main(int argc, char const *argv[]) {
 	std::cout << "\n-------------- Determinazione di lambda per lampada D ------------\n" << std::endl;
 
 
-	std::ifstream infileD;
-	infileD.open("../data/P2_2_lambda_lampadaD.txt", std::ios::in);
+	InFile.open("../data/P2_2_lambda_lampadaD.txt", std::ios::in);
 
 	//reset counter
 	counter = 0;
 
-	//riempio vettore di struct lampadaD
-	while(infileD >> colore >> x >> y)
+	//riempio vettore di struct lampadaD_P2
+	while(InFile >> colore >> x >> y)
 	{
-		lampadaD.push_back(misura());
-		lampadaD[counter].colore = colore;
-		lampadaD[counter].delta = x;
-		lampadaD[counter].delta_err = y;
-		lampadaD[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
-		lampadaD[counter].n_err = errN(alpha, alpha_err,
-								   lampadaD[counter].delta, lampadaD[counter].delta_err);
-		lampadaD[counter].lambda = sqrt(b_cauchy/(lampadaD[counter].n-a_cauchy));
-		lampadaD[counter].lambda_err = errLambda(lampadaD[counter].n, lampadaD[counter].n_err,
+		lampadaD_P2.push_back(misuraP2());
+		lampadaD_P2[counter].colore = colore;
+		lampadaD_P2[counter].delta = x;
+		lampadaD_P2[counter].delta_err = y;
+		lampadaD_P2[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
+		lampadaD_P2[counter].n_err = errN(alpha, alpha_err,
+								   lampadaD_P2[counter].delta, lampadaD_P2[counter].delta_err);
+		lampadaD_P2[counter].lambda = sqrt(b_cauchy/(lampadaD_P2[counter].n-a_cauchy));
+		histoP2D->Fill(lampadaD_P2[counter].lambda);
+		lampadaD_P2[counter].lambda_err = errLambda(lampadaD_P2[counter].n, lampadaD_P2[counter].n_err,
 												 b_cauchy, b_cauchy_err, a_cauchy, a_cauchy_err);
-		//print
-		std::cout << "Colore:\t" << lampadaC[counter].colore <<
-					 "\nlambda:\t" << round(lampadaC[counter].lambda) <<
-					 " +/- " << round(lampadaC[counter].lambda_err) << "\n" << std::endl;
 		counter++;
 	}
 
-	infileD.close();
+	InFile.close();
+
+	//disegno istogramma
+	c2->cd(2);
+	histoP2D->Draw();
+
+	//Output tabella latex -------------------
+	OutFile.open("../build/O3_P2_2_LambdaD.tex", std::ios::out);
+
+	caption = "Spettro Lampada D";
+	LatexTableBegin(OutFile, caption);
+
+	OutFile
+		<<"Colore & Lungh.Onda [nm] & Errore [nm] \\\\ \n"
+		<<"\\hline\n";
+
+	for (size_t i = 0; i < counter; i++)
+	{
+		OutFile
+			<<lampadaD_P2[i].colore <<" & "
+			<<round_to_digits(lampadaD_P2[i].lambda, 2) <<" & "
+			<<round_to_digits(lampadaD_P2[i].lambda_err, 1) <<" \\\\ \n";
+	}
+
+	// se si vuole inserire una label
+	caption = "label";
+	LatexTableEnd(OutFile, caption);
+
+	OutFile.close();
+
+	std::cout << "Creato file O3_P2_2_LambdaD.tex in build" << std::endl;
 
 //-------------------------------------
 
