@@ -143,7 +143,7 @@ int main(int argc, char const *argv[]) {
 	Gerr1->GetXaxis()->SetTitle("N");
 	Gerr1->GetYaxis()->SetTitle("sen(theta)");
 
-//parte 2 spettro di emissione delle lampade
+//parte 1 spettro di emissione delle lampade
 
 	TH1F* histoP1B = new TH1F("Reticolo: spettro di emissione lampada B","Reticolo: Spettro di emissione lampadaB",300,400,700);
 	TH1F* histoP1C = new TH1F("Reticolo: Spettro di emissione lampada C","Reticolo: Spettro di emissione lampada C",300,400,700);
@@ -552,7 +552,19 @@ int main(int argc, char const *argv[]) {
 
 //-------------------------------------
 
-	Grafica->Run();
+	//--------------------------------------Esporta immagini
+	c1->Print("O3_P1_1_d.eps","eps");
+	c2->Print("O3_P1_2_spectrum.eps","eps");
+	c3->Print("O3_P2_1_AB.eps","eps");
+	c4->Print("O3_P2_2_spectrum.eps","eps");
+	c5->Print("O3_C_lampadaC_spectrum.eps","eps");
+	c5->Print("O3_C_lampadaD_spectrum.eps","eps");
+
+
+//-------------------------------------
+
+
+	//Grafica->Run();
 
 	return 0;
 }
