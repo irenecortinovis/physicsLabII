@@ -118,11 +118,20 @@ int main(int argc, char const *argv[]) {
 //----------------- Definizione canvas -----------------
 
     gStyle->SetOptFit(1111);
+    //gStyle->SetOptStat(0);
 
-	TCanvas * c1 = new TCanvas("c1", "Reticolo d",0,0,900,500);
-	TCanvas * c2 = new TCanvas("c2", "Prisma",0,0,900,500);
-	c2->Divide(1,2);
+	TCanvas * c1 = new TCanvas("c1", "Reticolo",0,0,900,500);
+	TCanvas * c2 = new TCanvas("c2", "Reticolo",0,0,900,500);
+	c2->Divide(1,3);
 	TCanvas * c3 = new TCanvas("c3", "Prisma",1950,0,900,500);
+	TCanvas * c4 = new TCanvas("c4", "Prisma",0,0,900,500);
+	c4->Divide(1,2);
+
+	TCanvas * c5 = new TCanvas("c5", "Lampada C",0,0,900,500);
+	c5->Divide(1,2);
+
+	TCanvas * c6 = new TCanvas("c6", "Lampada D",0,0,900,500);
+	c6->Divide(1,2);
 
 
 //----------------- Definizione grafici -----------------
@@ -134,6 +143,13 @@ int main(int argc, char const *argv[]) {
 	Gerr1->GetXaxis()->SetTitle("N");
 	Gerr1->GetYaxis()->SetTitle("sen(theta)");
 
+//parte 2 spettro di emissione delle lampade
+
+	TH1F* histoP1B = new TH1F("Reticolo: spettro di emissione lampada B","Reticolo: Spettro di emissione lampadaB",300,400,700);
+	TH1F* histoP1C = new TH1F("Reticolo: Spettro di emissione lampada C","Reticolo: Spettro di emissione lampada C",300,400,700);
+	TH1F* histoP1D = new TH1F("Reticolo: Spettro di emissione lampada D","Reticolo: Spettro di emissione lampada D",300,400,700);
+
+
 //parte 2 determinazione di a e b in cauchy
 
 	TGraphErrors * Gerr4 = new TGraphErrors("../data/P2_1_cauchy.txt", "%lg %lg %lg %lg");
@@ -143,9 +159,8 @@ int main(int argc, char const *argv[]) {
 
 //parte 2 spettro di emissione delle lampade
 
-	//lampadaC
-	TH1F* histoP2C = new TH1F("Spettro di emissione lampada C","Spettro di emissione lampada C",300,400,700);
-	TH1F* histoP2D = new TH1F("Spettro di emissione lampada D","Spettro di emissione lampada D",300,400,700);
+	TH1F* histoP2C = new TH1F("Prisma: Spettro di emissione lampada C","Prisma: Spettro di emissione lampada C",300,400,700);
+	TH1F* histoP2D = new TH1F("Prisma: Spettro di emissione lampada D","Prisma: Spettro di emissione lampada D",300,400,700);
 
 
 //----------------- Preparazione file -----------------
@@ -206,11 +221,17 @@ int main(int argc, char const *argv[]) {
     LampadaB_P1.push_back(misuraP1() );
     LampadaB_P1[counter].colore = tempColore;
     LampadaB_P1[counter].lambda = Lambda_P1_2(tempSin, d_reticolo);
+	histoP1B->Fill(LampadaB_P1[counter].lambda);
     LampadaB_P1[counter].lambda_err =  LambdaErr_P1_2(tempSin,tempErr,d_reticolo,d_reticolo_err);
     counter++;
   }
 
   InFile.close();
+
+  //disegno istogramma
+  c2->cd(1);
+  histoP1B->Draw();
+
 
   //Output tabella latex -------------------
   OutFile.open("../build/O3_P1_2_LambdaB.tex", std::ios::out);
@@ -247,11 +268,16 @@ int main(int argc, char const *argv[]) {
     LampadaC_P1.push_back(misuraP1());
     LampadaC_P1[counter].colore = tempColore;
     LampadaC_P1[counter].lambda = Lambda_P1_2(tempSin, d_reticolo);
+    histoP1C->Fill(LampadaC_P1[counter].lambda);
     LampadaC_P1[counter].lambda_err =  LambdaErr_P1_2(tempSin,tempErr,d_reticolo,d_reticolo_err);
     counter++;
   }
 
   InFile.close();
+
+  //disegno istogramma
+  c2->cd(2);
+  histoP1C->Draw();
 
   //Output tabella latex -------------------
   OutFile.open("../build/O3_P1_2_LambdaC.tex", std::ios::out);
@@ -288,11 +314,16 @@ int main(int argc, char const *argv[]) {
     LampadaD_P1.push_back(misuraP1() );
     LampadaD_P1[counter].colore = tempColore;
     LampadaD_P1[counter].lambda = Lambda_P1_2(tempSin, d_reticolo);
+    histoP1D->Fill(LampadaD_P1[counter].lambda);
     LampadaD_P1[counter].lambda_err =  LambdaErr_P1_2(tempSin,tempErr,d_reticolo,d_reticolo_err);
     counter++;
   }
 
   InFile.close();
+
+  //disegno istogramma
+  c2->cd(3);
+  histoP1D->Draw();
 
   //Output tabella latex -------------------
   OutFile.open("../build/O3_P1_2_LambdaD.tex", std::ios::out);
@@ -407,7 +438,7 @@ int main(int argc, char const *argv[]) {
 	InFile.close();
 
 	//disegno istogramma
-	c2->cd(1);
+	c4->cd(1);
 	histoP2C->Draw();
 
 	//Output tabella latex -------------------
@@ -469,7 +500,7 @@ int main(int argc, char const *argv[]) {
 	InFile.close();
 
 	//disegno istogramma
-	c2->cd(2);
+	c4->cd(2);
 	histoP2D->Draw();
 
 	//Output tabella latex -------------------
@@ -497,6 +528,27 @@ int main(int argc, char const *argv[]) {
 	OutFile.close();
 
 	std::cout << "Creato file O3_P2_2_LambdaD.tex in build" << std::endl;
+
+
+
+
+
+	//-------------------------------------
+	//----------  CONCLUSIONI -------------
+	//-------------------------------------
+
+	//lampada C
+	c5->cd(1);
+	histoP1C->Draw();
+	c5->cd(2);
+	histoP2C->Draw();
+
+	//lampada D
+	c6->cd(1);
+	histoP1D->Draw();
+	c6->cd(2);
+	histoP2D->Draw();
+
 
 //-------------------------------------
 
