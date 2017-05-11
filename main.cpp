@@ -1,7 +1,8 @@
 //
 //
-// c++ stat1.cc main.cpp -o L2.o -Wall -std=c++98 `root-config --cflags --glibs`
-
+/*
+c++ stat1.cc main.cpp -o L2.o -Wall -std=c++98 `root-config --cflags --glibs`
+*/
 /* NOTE:
 
 
@@ -13,6 +14,7 @@
 #include <iomanip>
 #include <cmath>
 
+#include <TH1F.h>
 #include <TApplication.h>
 #include <TCanvas.h>
 
@@ -24,6 +26,10 @@
 #include "./c3/src/P2_RC_impulsata.cpp"
 #include "./c4/src/P1_RLC_DC.cpp"
 #include "./c4/src/P2_RLC_AC.cpp"
+#include "./o3/src/funzioni.cpp"
+#include "./o3/src/P1_reticolo.cpp"
+#include "./o3/src/P2_prisma.cpp"
+#include "./o3/src/conclusioni.cpp"
 
 
 
@@ -55,12 +61,18 @@ int main( int argc, char * argv[]){
 //------------ C3 ---------------
 //   P1_impedenze_fdt( Canv0 );
 
-//	 C3_P2_RL_impulsata( Canv0 );
-//	 C3_P2_RC_impulsata( Canv0 );
+//	 C3_P2_RL_impulsata();
+//	 C3_P2_RC_impulsata();
 
 //------------ C4 ---------------
-  P1_RLC_DC( Canv0 );	// C4
+//  P1_RLC_DC( Canv0 );	// C4
 //   P2_RLC_AC( Canv0 );
+
+//------------ O3 ---------------
+	TH1F* temp1 = O3_P1_reticolo();
+	//TH1F* temp2 = O3_P2_prisma();
+  	//O3_conclusioni();
+
 
   
 //  x1->Run();
