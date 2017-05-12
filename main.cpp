@@ -69,8 +69,8 @@ int main( int argc, char * argv[]){
 //   P2_RLC_AC( Canv0 );
 
 //------------ O3 ---------------
-	TH1F* temp1 = O3_P1_reticolo();
-	//TH1F* temp2 = O3_P2_prisma();
+	//O3_P1_reticolo();
+	O3_P2_prisma();
   	//O3_conclusioni();
 
 

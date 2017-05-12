@@ -30,7 +30,7 @@ struct misuraP1{
 };
 
 
-TH1F* O3_P1_reticolo()
+void O3_P1_reticolo()
 {
 	TApplication * Grafica = new TApplication("", NULL, NULL);
 
@@ -267,5 +267,5 @@ TH1F* O3_P1_reticolo()
 
 	//Grafica->Run();
 
-	return(histoP1D);
+	return;
 }

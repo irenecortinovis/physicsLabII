@@ -39,7 +39,7 @@ struct misuraP2
 };
 
 
-TH1F* O3_P2_prisma()
+void O3_P2_prisma()
 {
 	TApplication * Grafica = new TApplication("", NULL, NULL);
 
@@ -259,5 +259,5 @@ TH1F* O3_P2_prisma()
 
 	//Grafica->Run();
 
-	return(histoP2D);
+	return;
 }
