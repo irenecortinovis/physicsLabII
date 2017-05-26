@@ -9,6 +9,8 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>		// pow(), tgamma()
+#include <root/TGraphErrors.h>
+#include <root/TAxis.h>
 
 #include <TH1D.h>
 #include <TF1.h>
@@ -48,12 +50,8 @@
 //   6 -Fase (MATH-CH1)
 //   7 errFase CH1  
 
-//  Non Linear Fit
-void NonLinearFit( TCanvas *, int );
-void ShowFit();
 
-//  Linear Fit
-void LinearFit( TCanvas * ); 
+void C3P1_Fit( TCanvas *, int );
  
 
 
@@ -181,12 +179,9 @@ void P1_impedenze_fdt( TCanvas * Canv0 ) {
 
 
 
-  // Non linear Fit
-
-  for ( int i = 0; i<4; i++ ) NonLinearFit( Canv0, i );
+  for ( int i = 0; i<4; i++ ) C3P1_Fit( Canv0, i );
   
-  // NOT TO DO Linear Fit
-  
+ 
   
     
   
@@ -195,11 +190,7 @@ return;}
 
 
 
-  ///////////////////////////////////////////////////////////
-  /// Non linear Fit
-
-
-void NonLinearFit( TCanvas * Canv0, int comp )
+void C3P1_Fit( TCanvas * Canv0, int comp )
 { 
   
   using namespace gVar;
@@ -253,12 +244,20 @@ void NonLinearFit( TCanvas * Canv0, int comp )
     targ->SetMarkerColor(4);
     targ->SetMarkerStyle(21);
 
-    // riempito all'occorrenza
-    TF1  *f1 = new TF1();
+    
+
+    TF1  *f1    = new TF1();	// non linear fit function
+    
+    TLinearFitter * regressione = new TLinearFitter();
+    
 
     
     
     // Mod impedenza
+    TF1 *lf1 = new TF1("lf1", "1++x", fMin, fMax);
+    regressione->SetFormula(lf1);
+    
+    
     for (int i = 0; i< size; i++) {
       
        y = ( Vba.at(i) / Vb.at(i) ) * ( R[comp] + r );
@@ -269,6 +268,8 @@ void NonLinearFit( TCanvas * Canv0, int comp )
       
       mod->SetPoint( i, x, y );
       mod->SetPointError( i, sx, sy );
+      
+
     }
     
     f1->Clear();
@@ -447,60 +448,11 @@ void NonLinearFit( TCanvas * Canv0, int comp )
      Canv0->Print( OutFileName.c_str(), "eps");
      Canv0->Clear();
      
-
-
+ 
   
-  
-  
-  
+return;}
 
 
-
-  ///////////////////////////////////////////////////////////
-  /// Calcolo Chi2
-  
-//   double chi2 = 0;
-//   double * x = gr->GetX();
-//   double * y = gr->GetY();
-//   
-//   for (int i = 0; i< gr->GetN(); i++) {
-//     
-//     // selects points in the fitting range
-//     if ( x[i] >= f1Min && x[i] <= f1Max ) chi2 +=  pow( y[i] - f1->Eval(x[i]) ,2) / gr->GetErrorY(i);
-//     }
-// 
-//   int dof  = f1->GetNumberFitPoints() - f1->GetNpar() - 1;
-//     std::cout << "dof : "<< dof << "\n";			//check
-//     std::cout << "chi2 / dof : "<< chi2 / dof << "\n";		//check
-
-
-
-  ///////////////////////////////////////////////////////////
-  /// Legenda
-  
-//   TLegend * leg = new TLegend(0.15,0.7,0.6,0.9);
-//     leg->SetTextSize(0.045);
-//     leg->SetHeader("MLE - fit");
-//     leg->AddEntry( gr, "data (I,V)","p");
-//     leg->AddEntry( f1, "(e^{ [0] * x } - 1)*[1] + x*[2]","l");
-// 
-//     
-//     leg->Draw();
-    
-  
-   
-  ///////////////////////////////////////////////////////////
-  /// Fit result table
-    
-//    TPaveText *pt = new TPaveText(0.15,0.3,0.4,0.55);
-//     pt->SetFillColor(18);
-//     pt->SetTextAlign(12);
-//     pt->AddText("qui");
-//     pt->AddText("qui");
-//     pt->Draw();
-
-return;
-}
 
 void ComponentNameMessage( int i )
 {
@@ -537,359 +489,3 @@ double ModFdtL ( double * x, double * par )
 
 double ArgFdtL ( double * x, double * par )
 { return atan( - 1.0 * ( par[0] / ( par[1] * 2 * M_PI * exp10( x[0] ) ) ) ); }
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-void LinearFit( TCanvas * Canv0 )
-{
-  
-  using namespace gVar;
-  
-    std::cout << " -------------- Linear Fit -------------- " << "\n";
-  
-
-  
-  /////////////////////////////////////////////////////////
-  // Condensatore 1
-  
-  comp = 0; // Cond1
-  ComponentNameMessage( comp );
-  
-  v   	= ptr[comp]->pData->at(0);
-  Va  	= ptr[comp]->pData->at(1);
-  Vb  	= ptr[comp]->pData->at(2);
-  Vba 	= ptr[comp]->pData->at(3);
-  fC2 	= ptr[comp]->pData->at(4);
-  sfC2 	= ptr[comp]->pData->at(5);
-  fC1 	= ptr[comp]->pData->at(6);
-  sfC1 	= ptr[comp]->pData->at(7);
-  
-  size = Stat::fsize( &v );
-  
-  TGraphErrors* Fitmod  = new TGraphErrors ( size );
-  TGraphErrors* Fitarg  = new TGraphErrors ( size );
-  
-
-  
-  // Mod impedenza
-  
-  for (int i = 0; i< size; i++) {
-      
-       y = ( Vba.at(i) / Vb.at(i) ) * ( R[ comp ] + 0.0 );			// R[0] = 14870 om
-      sy = ( sigmaV*( 1/Vba.at(i) + 1/ Vb.at(i) )  + errR ) / y;	// propagazione errore su y
-      
-       x = 2 * M_PI * v.at(i);	// in rad/s
-      sx = 2 * M_PI;
-      
-      Fitmod->SetPoint( i, x, 1/y );
-      Fitmod->SetPointError( i, sx, sy );
-    }
-   
-  // Fit
-  
-  fMin = Stat::fmin( &v ) * 2 * M_PI;
-  fMax = Stat::fmax( &v ) * 2 * M_PI;
-
-  Outptr[comp][0] = Fitmod->Fit("pol1","S", "L", fMin ,fMax);  
-
-
-    
-  
-  
-  // Arg impedenza - fase Channel 2
-  for (int i = 0; i< size; i++) {
-      
-       y = - 6.28* fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
-      sy =   6.28*sfC2.at(i)*v.at(i)*exp10(-6);
-      
-       x = 2 * M_PI * v.at(i);
-      sx = 2 * M_PI;
-      
-      Fitarg->SetPoint( i, x, y );
-      Fitarg->SetPointError( i, sx, sy  );
-    }
-    
-  // Fit
-
-  Outptr[0][1] = Fitarg->Fit("pol1","S", "L", fMin ,fMax);  
-
-
-
-
-
-
-  /////////////////////////////////////////////////////////
-  // Condensatore 2
-  
-  comp = 1; // Cond1
-  ComponentNameMessage( comp );
-  
-  v   	= ptr[comp]->pData->at(0);
-  Va  	= ptr[comp]->pData->at(1);
-  Vb  	= ptr[comp]->pData->at(2);
-  Vba 	= ptr[comp]->pData->at(3);
-  fC2 	= ptr[comp]->pData->at(4);
-  sfC2 	= ptr[comp]->pData->at(5);
-  fC1 	= ptr[comp]->pData->at(6);
-  sfC1 	= ptr[comp]->pData->at(7);
-  
-  size = Stat::fsize( &v );
-  
-
-
-  Fitmod->Clear();
-  
-  // Mod impedenza
-   for (int i = 0; i< size; i++) {
-      
-       y = ( Vba.at(i) / Vb.at(i) ) * ( R[ comp ] + 0.0 );
-      sy = ( sigmaV*( 1/Vba.at(i) + 1/ Vb.at(i) )  + errR ) / y;	// propagazione errore su y
-      
-       x = 2 * M_PI * v.at(i);	// in rad/s
-      sx = 2 * M_PI;
-      
-      Fitmod->SetPoint( i, x, 1/y );
-      Fitmod->SetPointError( i, sx, sy );
-    }
-    
- 
-  // Fit
-  
-  fMin = Stat::fmin( &v ) * 2 * M_PI;
-  fMax = Stat::fmax( &v ) * 2 * M_PI;
-  
-  Outptr[1][0] = Fitmod->Fit("pol1","S", "L", fMin ,fMax);  
-
-
-    
-  
-    
-  Fitarg->Clear();
-  
-  // Arg impedenza - fase Channel 2
-  for (int i = 0; i< size; i++) {
-      
-       y = - 6.28* fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
-      sy =   6.28*sfC2.at(i)*v.at(i)*exp10(-6);
-      
-       x = 2 * M_PI * v.at(i);
-      sx = 2 * M_PI;
-      
-      Fitarg->SetPoint( i, x, y );
-      Fitarg->SetPointError( i, sx, sy  );
-    }
-    
-  // Fit
-
-  Outptr[comp][1] = Fitarg->Fit("pol1","S", "L", fMin ,fMax);  
-
-  
-
-  
-    
-  /////////////////////////////////////////////////////////  
-  // Induttore 1
-  
-  comp = 2;
-  ComponentNameMessage( comp );
-  
-  v   	= ptr[comp]->pData->at(0);
-  Va  	= ptr[comp]->pData->at(1);
-  Vb  	= ptr[comp]->pData->at(2);
-  Vba 	= ptr[comp]->pData->at(3);
-  fC2 	= ptr[comp]->pData->at(4);
-  sfC2 	= ptr[comp]->pData->at(5);
-  fC1 	= ptr[comp]->pData->at(6);
-  sfC1 	= ptr[comp]->pData->at(7);
-  
-  size = Stat::fsize( &v );
-  
-  
-  
-  Fitmod->Clear();
-  
-  // Mod impedenza
-   for (int i = 0; i< size; i++) {
-      
-       y = ( Vba.at(i) / Vb.at(i) ) * ( R[ comp ] + 0.0 );
-       y = pow( y, 2 );
-      sy = ( sigmaV*( 1/Vba.at(i) + 1/ Vb.at(i) )  + errR ) * y * 2;	// propagazione errore su y
-      
-       x = 2 * M_PI * v.at(i);	// in rad/s
-       x = pow( x, 2 );
-      sx = 2 * M_PI * 2;
-      
-      Fitmod->SetPoint( i, x, y );
-      Fitmod->SetPointError( i, sx, sy );
-    }
-    
- 
-  // Fit
-  
-  fMin = Stat::fmin( &v ) * 2 * M_PI;
-  fMax = Stat::fmax( &v ) * 2 * M_PI;
-  
-  Outptr[comp][0] = Fitmod->Fit("pol1","S", "L", fMin ,fMax);  
-
-
-    
-  
-    
-  Fitarg->Clear();
-  
-  // Arg impedenza - fase Channel 2
-  for (int i = 0; i< size; i++) {
-      
-       y = - 6.28* fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
-      sy =   6.28*sfC2.at(i)*v.at(i)*exp10(-6);
-      
-       x = 2 * M_PI * v.at(i);
-      sx = 2 * M_PI;
-      
-      Fitarg->SetPoint( i, x, y );
-      Fitarg->SetPointError( i, sx, sy  );
-    }
-    
-  // Fit
-
-  Outptr[comp][1] = Fitarg->Fit("pol1","S", "L", fMin ,fMax);  
-
-
-  
-  /////////////////////////////////////////////////////////  
-  // Induttore 2
-  
-  comp = 3;
-  ComponentNameMessage( comp );
-  
-  v   	= ptr[comp]->pData->at(0);
-  Va  	= ptr[comp]->pData->at(1);
-  Vb  	= ptr[comp]->pData->at(2);
-  Vba 	= ptr[comp]->pData->at(3);
-  fC2 	= ptr[comp]->pData->at(4);
-  sfC2 	= ptr[comp]->pData->at(5);
-  fC1 	= ptr[comp]->pData->at(6);
-  sfC1 	= ptr[comp]->pData->at(7);
-  
-  size = Stat::fsize( &v );
-  
-  
-  
-  Fitmod->Clear();
-  
-  // Mod impedenza
-   for (int i = 0; i< size; i++) {
-      
-       y = ( Vba.at(i) / Vb.at(i) ) * ( R[comp] + 0.0 );
-       y = pow( y, 2 );
-      sy = ( sigmaV*( 1/Vba.at(i) + 1/ Vb.at(i) )  + errR ) * y * 2;	// propagazione errore su y
-      
-       x = 2 * M_PI * v.at(i);	// in rad/s
-       x = pow( x, 2 );
-      sx = 2 * M_PI * 2;
-      
-      Fitmod->SetPoint( i, x, y );
-      Fitmod->SetPointError( i, sx, sy );
-    }
-    
- 
-  // Fit
-  
-  fMin = Stat::fmin( &v ) * 2 * M_PI;
-  fMax = Stat::fmax( &v ) * 2 * M_PI;
-  
-  Outptr[comp][0] = Fitmod->Fit("pol1","S", "L", fMin ,fMax);  
-
-
-    
-  
-    
-  Fitarg->Clear();
-  
-  // Arg impedenza - fase Channel 2
-  for (int i = 0; i< size; i++) {
-      
-       y = - 6.28* fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
-      sy =   6.28*sfC2.at(i)*v.at(i)*exp10(-6);
-      
-       x = 2 * M_PI * v.at(i);
-      sx = 2 * M_PI;
-      
-      Fitarg->SetPoint( i, x, y );
-      Fitarg->SetPointError( i, sx, sy  );
-    }
-    
-  // Fit
-
-  Outptr[comp][1] = Fitarg->Fit("pol1","S", "L", fMin ,fMax);  
-
-  
-  
-  return;
-}
-*/
-
-void ShowFit()
-{
-  
-  using namespace gVar;
-  
-  
-  std::cout << "\n\n" << "-------------------------" << "\n\n";
-  
-  for ( int i = 0; i < 2 ; i++ ){
-    
-    std::cout << " C" << i+1 << " | "
-    <<  Outptr[i][0]->Parameter(1) << " | "
-    <<  Outptr[i][0]->ParError(1) << " | "
-    <<  Outptr[i][0]->Prob() << " | "
-    <<  "\n";
-    
-  }
-  
-    for ( int i = 0; i < 2 ; i++ ){
-    
-    std::cout << " Fase-" << i+1 << " | "
-    <<  Outptr[i][1]->Parameter(0) << " | "
-    <<  Outptr[i][1]->ParError(0) << " | "
-    <<  Outptr[i][1]->Prob() << " | "
-    <<  "\n";
-    
-  }
-
-
-  std::cout << "\n\n" << "-------------------------" << "\n\n";
-  
-  for ( int i = 2; i < 4 ; i++ ){
-    
-    std::cout << " L" << i+1 << " | "
-    <<  sqrt( Outptr[i][0]->Parameter(1) ) << " | "
-    <<  0.5 * Outptr[i][0]->ParError(1) << " | "
-    <<  Outptr[i][0]->Prob() << " | "
-    <<  "\n";
-    
-  }
-  
-    for ( int i = 0; i < 4 ; i++ ){
-    
-    std::cout << " Fase-" << i+1 << " | "
-    <<  Outptr[i][1]->Parameter(0) << " | "
-    <<  Outptr[i][1]->ParError(0) << " | "
-    <<  Outptr[i][1]->Prob() << " | "
-    <<  "\n";
-    
-  }  
-  
-  return;
-}
