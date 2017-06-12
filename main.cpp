@@ -22,8 +22,8 @@ c++ stat1.cc main.cpp -o L2.o -Wall -std=c++98 `root-config --cflags --glibs`
 // #include "./c1/src/P3_1_diod.cpp"
 // #include "./c2/src/P1_1_trueRMS.cpp"
  #include "./c3/src/P1_impedenze_fdt.cpp"
-// #include "./c3/src/P2_RL_impulsata.cpp"
-// #include "./c3/src/P2_RC_impulsata.cpp"
+ #include "./c3/src/P2_RL_impulsata.cpp"
+ #include "./c3/src/P2_RC_impulsata.cpp"
 // #include "./c4/src/P1_RLC_DC.cpp"
 // #include "./c4/src/P2_RLC_AC.cpp"
 
@@ -55,8 +55,8 @@ int main( int argc, char * argv[]){
 //------------ C3 ---------------
    P1_impedenze_fdt( Canv0 );
 
-//	 C3_P2_RL_impulsata();
-//	 C3_P2_RC_impulsata();
+	 C3_P2_RL_impulsata();
+	 C3_P2_RC_impulsata();
 
 //------------ C4 ---------------
 //  P1_RLC_DC( Canv0 );	// C4
@@ -78,7 +78,7 @@ int main( int argc, char * argv[]){
   
 
   
-x1->Run();
+// x1->Run();
 
 
 return 0;}

@@ -50,7 +50,7 @@
 //   7 errFase CH1  
 
 
-void C3P1_Fit( TCanvas *, int );
+void C3P1_Fit( TCanvas *, int, int );
  
 
 
@@ -82,6 +82,9 @@ namespace gVar{
     
   // Variabili ausiliarie
   double y, sy, x, sx, size, fMin, fMax;
+  
+  // Chi2 ricalcolati
+  double Chi2[16];
   
   // resistori
   double r ;	// resistenza interna generatore
@@ -173,23 +176,25 @@ void P1_impedenze_fdt( TCanvas * Canv0 ) {
   gVar::I[2] =   0.12; 	// henry
   gVar::I[3] =   0.05;
   
+  
   /////////////////////////////////////////////////////
 
 
-
-
-  for ( int i = 0; i<4; i++ ) C3P1_Fit( Canv0, i );
+  // inizializza a 0 i Chi2 ricalcolati
+  for (int i = 0; i < 16 ; i++) gVar::Chi2[i] =0;
   
- 
+  // prima stima ricalcola i Chi2
+  for ( int i = 0; i<4; i++ )  C3P1_Fit( Canv0, i, 0 );
   
-    
+  // poi ristima con i nuovi errori su y
+  for ( int i = 0; i<4; i++ ) C3P1_Fit( Canv0, i, 1 );
   
 return;}
 
 
 
 
-void C3P1_Fit( TCanvas * Canv0, int comp )
+void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 { 
   
   using namespace gVar;
@@ -225,14 +230,14 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       
 
   TF1  *f1    = new TF1();	// non linear fit function
-  TF1  *f2    = new TF1();	// fitted function
-     
+       
     
     // Mod impedenza
     for (int i = 0; i< size; i++) {
       
        y = ( Vba.at(i) / Vb.at(i) ) * ( R[comp] + r );
       sy = sqrt( pow( sigmaV*( 2/Vba.at(i) + 1/ Vb.at(i) ), 2)  + pow(errR,2) ) * y;	// propagazione errore su y
+      if (flag == 1 ) sy = sqrt( Chi2[ comp + 0 ] ); // errori ricalcolati
       
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10
@@ -248,7 +253,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
     if ( comp <  2 ){
       
       f1 = new TF1("ModImpedenzaC", ModImpedenzaC, fMin ,fMax, 2);
-      	f1->SetParameter( 0, 50 );		// resistenza
+      	f1->SetParameter( 0, 0 );		// resistenza
 	f1->SetParameter( 1,  C[comp] );	// condensatore
 	f1->SetParName( 0, "R [ohm]");
 	f1->SetParName( 1, "C [F]");
@@ -263,6 +268,17 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	
 	gStyle->SetOptFit(1111);
 	mod->Fit("ModImpedenzaC", "C", "", fMin, fMax);
+	
+	// ricalcolo del chi2
+	Chi2[ comp + 0] = 0;
+	y = 0; x=0;
+	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	  mod->GetPoint( i, x, y);
+	  
+	  Chi2[ comp + 0] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	}
+	
 	mod->Draw("AP");
 	
 	TLegend * leg = new TLegend(0.6,0.3,0.89,0.6);
@@ -270,10 +286,10 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	leg->AddEntry(mod, "data", "p");
 	leg->Draw();
 	
-	std::string OutObj = "_ModImp_";
+	std::string OutObj = "ModImp_";
 	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 
-	Canv0->Print( OutFileName.c_str(), "eps");     
+	Canv0->Print( OutFileName.c_str(), "eps");
 	
     }
     
@@ -284,7 +300,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       
       f1 = new TF1("ModImpedenzaL", ModImpedenzaL, fMin ,fMax, 2);
 	
-	f1->SetParameter( 0,  rL );	// resitenza interna induttore
+	if (comp == 2) f1->SetParameter( 0,  2*rL );	// resitenza interna induttore
+	if (comp == 3) f1->SetParameter( 0,  rL );	// resitenza interna induttore
 	f1->SetParameter( 1,  I[comp] );
 	f1->SetParName( 0, "R [ohm]");
 	f1->SetParName( 1, "L [H]");
@@ -294,12 +311,24 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	Canv0->cd();
 	mod->GetXaxis()->SetTitle("log (Freq - Hz)");
 	mod->GetXaxis()->CenterTitle();
-	mod->SetTitle(" Modulo impedenza  ");
+	mod->SetTitle("Modulo impedenza");
 	mod->SetMarkerColor(4);
 	mod->SetMarkerStyle(21);
 	
 	gStyle->SetOptFit(1111);
+	
 	mod->Fit("ModImpedenzaL", "C", "", fMin, fMax);
+	
+	// ricalcolo del chi2
+	Chi2[ comp + 0] = 0;
+	y = 0; x=0;
+	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	  mod->GetPoint( i, x, y);
+	  
+	  Chi2[ comp + 0] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	}
+	
 	mod->Draw("AP");
 	
 	TLegend * leg = new TLegend(0.2,0.3,0.5,0.6);
@@ -307,7 +336,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	leg->AddEntry(mod, "data", "p");
 	leg->Draw();
 
-	std::string OutObj = "_ModImp_";
+	std::string OutObj = "ModImp_";
 	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 	
 	Canv0->Print( OutFileName.c_str(), "eps");     
@@ -322,6 +351,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       
        y = - 2 * M_PI * fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
       sy =   sqrt( pow( sfC2.at(i) / fC2.at(i), 2) + pow( 1 / v.at(i), 2) ) * fabs(y);
+      sy = sy * 0.5;
+      // if (flag == 1 ) sy = sqrt( Chi2[ comp + 4 ] ); // errori ricalcolati
       
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10      
@@ -339,7 +370,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
     ///
     if ( comp <  2 ){
       
-      f1 = new TF1 ("ArgImpedenzaC", ArgImpedenzaC, fMin ,fMax, 1);
+       f1 = new TF1 ("ArgImpedenzaC", ArgImpedenzaC, fMin ,fMax, 1);
+     
 	f1->SetParameter( 0, 50*C[comp] );
 	f1->SetParName( 0, "RC [ohm*F]");
 	arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
@@ -348,12 +380,29 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	Canv0->cd();
 	arg->GetXaxis()->SetTitle("log (Freq - Hz)");
 	arg->GetXaxis()->CenterTitle();
-	arg->SetTitle(" Argomento impedenza  ");
+	arg->SetTitle("Argomento impedenza");
 	arg->SetMarkerColor(4);
 	arg->SetMarkerStyle(21);
 	
 	gStyle->SetOptFit(1111);
-	arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
+	
+	if (comp == 0) arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
+	
+	// escludo l'ultimo dato dalla stima --> outlier
+	if (comp == 1) arg->Fit("ArgImpedenzaC", "C", "", fMin, 4.2);
+	
+	
+	// ricalcolo del chi2
+	Chi2[ comp + 4] = 0;
+	y = 0; x=0;
+	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	  mod->GetPoint( i, x, y);
+	  
+	  Chi2[ comp + 4] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	}
+	
+	
 	arg->Draw("AP");
 	
 	TLegend * leg = new TLegend(0.1,0.75,0.5,0.90);
@@ -361,7 +410,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	leg->AddEntry(arg, "data", "p");
 	leg->Draw();
 
-	std::string OutObj = "_ArgImp_";
+	std::string OutObj = "ArgImp_";
 	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 
 	Canv0->Print( OutFileName.c_str(), "eps");     
@@ -383,12 +432,28 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	Canv0->cd();
 	arg->GetXaxis()->SetTitle("log (Freq - Hz)");
 	arg->GetXaxis()->CenterTitle();
-	arg->SetTitle(" Argomento impedenza  ");
+	arg->SetTitle("Argomento impedenza");
 	arg->SetMarkerColor(4);
 	arg->SetMarkerStyle(21);
 	
 	gStyle->SetOptFit(1111);
-	arg->Fit("ArgImpedenzaL", "C", "", fMin, fMax);
+	
+	// esclud l'ultimo dato
+	if ( comp == 2 ) arg->Fit("ArgImpedenzaL", "C", "", fMin, 4.2);
+	if ( comp == 3 ) arg->Fit("ArgImpedenzaL", "C", "", fMin, fMax);
+	
+	
+	// ricalcolo del chi2
+	Chi2[ comp + 4] = 0;
+	y = 0; x=0;
+	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	  mod->GetPoint( i, x, y);
+	  
+	  Chi2[ comp + 4] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	}
+	
+	
 	arg->Draw("AP");
 	
 	
@@ -397,7 +462,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	leg->AddEntry(arg, "data", "p");
 	leg->Draw();
 
-	std::string OutObj = "_ArgImp_";
+	std::string OutObj = "ArgImp_";
 	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 
 	Canv0->Print( OutFileName.c_str(), "eps");     
@@ -414,6 +479,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       
        y = Vba.at(i) / Va.at(i);
       sy = y * sqrt( pow(errR,2) + pow( sigmaV*( 2/ Vba.at(i) + 1/ Va.at(i) ), 2) );	  // propagazione errore su y
+      sy = sy * 0.15;
+      //if (flag == 1 ) sy = sqrt( Chi2[ comp + 8 ] ); // errori ricalcolati
       
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10      
@@ -427,21 +494,35 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
     
     if ( comp <  2 ){ // condensatori
       
+      f1->Clear();
       f1 = new TF1 ("ModFdtC", ModFdtC, fMin ,fMax, 1);
 	
-	f1->SetParameter( 0, (R[comp] + r)*C[comp] );
+	f1->SetParameter( 0, ( R[comp] + r )*C[comp] );
 	f1->SetParName  ( 0, "RC [ohm*F]");
 	
 	Canv0->Clear();
 	Canv0->cd();
 	tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
 	tmod->GetXaxis()->CenterTitle();
-	tmod->SetTitle(" Modulo Funz. di trasferimento  ");
+	tmod->SetTitle("Modulo Funz. di trasferimento");
 	tmod->SetMarkerColor(4);
 	tmod->SetMarkerStyle(21);
 	
 	gStyle->SetOptFit(1111);
 	tmod->Fit("ModFdtC", "C", "", fMin, fMax);
+	
+	
+	// ricalcolo del chi2
+	Chi2[ comp + 8] = 0;
+	y = 0; x=0;
+	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	  mod->GetPoint( i, x, y);
+	  
+	  Chi2[ comp + 8] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	}
+	
+	
 	tmod->Draw("AP");
 	
 	TLegend * leg = new TLegend(0.15,0.2,0.50,0.4);
@@ -449,7 +530,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	leg->AddEntry( tmod, "data", "p");
 	leg->Draw();
 
-	std::string OutObj = "_ModFdT_";
+	std::string OutObj = "ModFdT_";
 	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 	
 	Canv0->Print( OutFileName.c_str(), "eps");
@@ -461,7 +542,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       
        f1 = new TF1 ("ModFdtL", ModFdtL, fMin ,fMax, 2);
 	
-	f1->SetParameter( 0, rL+100 );
+	f1->SetParameter( 0, R[comp] + r );
 	f1->SetParameter( 1, I[comp] );
 	f1->SetParName  ( 0, "R [ohm]");
 	f1->SetParName  ( 1, "L [h]");
@@ -470,12 +551,24 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	Canv0->cd();
 	tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
 	tmod->GetXaxis()->CenterTitle();
-	tmod->SetTitle(" Modulo Funz. di trasferimento  ");
+	tmod->SetTitle("Modulo Funz. di trasferimento");
 	tmod->SetMarkerColor(4);
 	tmod->SetMarkerStyle(21);
 	
 	gStyle->SetOptFit(1111);
 	tmod->Fit("ModFdtL", "C", "", fMin, fMax);
+	
+	
+	// ricalcolo del chi2
+	Chi2[ comp + 8] = 0;
+	y = 0; x=0;
+	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	  mod->GetPoint( i, x, y);
+	  
+	  Chi2[ comp + 8] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	}
+	
 	tmod->Draw("AP");
 	
 	TLegend * leg = new TLegend(0.6,0.15,0.9,0.40);
@@ -483,7 +576,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 	leg->AddEntry( tmod, "data", "p");
 	leg->Draw();
 
-	std::string OutObj = "_ModFdT_";
+	std::string OutObj = "ModFdT_";
 	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 	
 	Canv0->Print( OutFileName.c_str(), "eps");
@@ -515,19 +608,32 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
     if ( comp <  2 ){ // condensatori
  
     f1 = new TF1 ("ArgFdtC", ArgFdtC, fMin ,fMax, 1);
-      f1->SetParameter( 0, C[comp]*50 );
+      f1->SetParameter( 0, C[comp]*(R[comp]+r) );
       f1->SetParName  ( 0, "RC [ohm*F]");
       
       Canv0->Clear();
       Canv0->cd();
       targ->GetXaxis()->SetTitle("log (Freq - Hz)");
       targ->GetXaxis()->CenterTitle();
-      targ->SetTitle(" Argomento Funz. di trasferimento  ");
+      targ->SetTitle("Argomento Funz. di trasferimento");
       targ->SetMarkerColor(4);
       targ->SetMarkerStyle(21);
 	
       gStyle->SetOptFit(1111);
       targ->Fit("ArgFdtC", "C", "", fMin, fMax);
+      
+      
+      	// ricalcolo del chi2
+	Chi2[ comp + 12] = 0;
+	y = 0; x=0;
+	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	  mod->GetPoint( i, x, y);
+	  
+	  Chi2[ comp + 12] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	}
+      
+      
       targ->Draw("AP");
 	
       TLegend * leg = new TLegend(0.16,0.25,0.45,0.5);
@@ -535,7 +641,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       leg->AddEntry(targ, "data", "p");
       leg->Draw();
 
-      std::string OutObj = "_ArgFdT_";
+      std::string OutObj = "ArgFdT_";
       std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 
       Canv0->Print( OutFileName.c_str(), "eps");     
@@ -546,20 +652,33 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
     else {
       
     f1 = new TF1 ("ArgFdtL", ArgFdtL, fMin ,fMax, 1);
-      f1->SetParameter( 0, rL / I[comp] );
+      f1->SetParameter( 0, ( R[comp] + r ) / I[comp] );
       f1->SetParName  ( 0, "R/L [ohm/H]");
 
       Canv0->Clear();
       Canv0->cd();
       targ->GetXaxis()->SetTitle("log (Freq - Hz)");
       targ->GetXaxis()->CenterTitle();
-      targ->SetTitle(" Argomento Funz. di trasferimento  ");
+      targ->SetTitle("Argomento Funz. di trasferimento");
       targ->SetMarkerColor(4);
       targ->SetMarkerStyle(21);
 	
       gStyle->SetOptFit(1111);
       
       targ->Fit("ArgFdtL", "C", "", fMin, fMax);
+      
+      
+      // ricalcolo del chi2
+      Chi2[ comp + 12] = 0;
+      y = 0; x=0;
+      for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+	  
+	mod->GetPoint( i, x, y);
+	  
+	Chi2[ comp + 12] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+      }
+      
+      
       targ->Draw("AP");
 	
       TLegend * leg = new TLegend(0.11,0.71,0.35,0.91);
@@ -567,7 +686,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       leg->AddEntry(targ, "data", "p");
       leg->Draw();
 
-      std::string OutObj = "_ArgFdT_";
+      std::string OutObj = "ArgFdT_";
       std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 
       Canv0->Print( OutFileName.c_str(), "eps");     
@@ -575,7 +694,9 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
     }
 
     
- 
+    // stampa errori ricalcolati
+    std::cout << "\n\n Stampa errori ricalcolati \n\n ";
+    for (int i = 0; i < 16 ; i++) std::cout << sqrt( Chi2[i] ) << "\n" <<  std::endl;
   
 return;}
 
