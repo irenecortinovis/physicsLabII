@@ -16,6 +16,8 @@
 #include <TApplication.h>
 #include <TGraphErrors.h>
 #include <TStyle.h>
+#include <TLegend.h>
+
 
 void C3_P2_RC_impulsata()
 {
@@ -71,6 +73,8 @@ void C3_P2_RC_impulsata()
 
 	
 //-------------------------------------Disegna e fitta grafici
+	
+
 	TCanvas* c1 = new TCanvas("c1", "RC corrente impulsata",  950, 950);
 	c1->Divide(2,2); 
 	
@@ -86,6 +90,11 @@ void C3_P2_RC_impulsata()
 
 	Gerr1->Fit(fit1,"C");
 
+	TLegend* legend1 = new TLegend(0.1,0.75,0.5,0.9);
+	legend1->AddEntry(fit1,"V_0*(1-exp(-x/Tau))","l");
+	legend1->AddEntry(Gerr1,"data","p");
+	legend1->Draw();
+
 	//------Scarica VC
 	c1->cd(2);
 	Gerr2->Draw("AP");
@@ -97,6 +106,11 @@ void C3_P2_RC_impulsata()
 	fit2->SetParameter(1,200);
 
 	Gerr2->Fit(fit2,"C");
+
+	TLegend* legend2 = new TLegend(0.1,0.75,0.5,0.9);
+	legend2->AddEntry(fit2,"V_0*exp(-x/Tau)","l");
+	legend2->AddEntry(Gerr2,"data","p");
+	legend2->Draw();
 
 	//------Carica VR
 	c1->cd(3);
@@ -110,6 +124,11 @@ void C3_P2_RC_impulsata()
 
 	Gerr3->Fit(fit3,"C");
 
+	TLegend* legend3 = new TLegend(0.1,0.75,0.5,0.9);
+	legend3->AddEntry(fit3,"V_0*exp(-x/Tau)","l");
+	legend3->AddEntry(Gerr3,"data","p");
+	legend3->Draw();
+
 	//------Scarica VR
 	c1->cd(4);
 	Gerr4->Draw("AP");
@@ -121,6 +140,11 @@ void C3_P2_RC_impulsata()
 	fit4->SetParameter(1,200);
 
 	Gerr4->Fit(fit4,"C");
+
+	TLegend* legend4 = new TLegend(0.1,0.75,0.5,0.9);
+	legend4->AddEntry(fit4,"-V_0*exp(-x/Tau)","l");
+	legend4->AddEntry(Gerr4,"data","p");
+	legend4->Draw();
 
 	
 
