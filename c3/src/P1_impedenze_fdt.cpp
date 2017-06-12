@@ -26,7 +26,6 @@
 #include <TLegend.h>
 #include <TStyle.h>
 #include <TCanvas.h>
-#include <TLinearFitter.h>
 
 
 #include "../../stat1.h"
@@ -135,10 +134,10 @@ void P1_impedenze_fdt( TCanvas * Canv0 ) {
   /// Data input step
 
   std::string path  = "./c3/data/";
-    std::string file1 = "P1_condens_1.txt";
-    std::string file2 = "P1_condens_2.txt";
-    std::string file3 = "P1_indut_1.txt";
-    std::string file4 = "P1_indut_2.txt";
+  std::string file1 = "P1_condens_1.txt";
+  std::string file2 = "P1_condens_2.txt";
+  std::string file3 = "P1_indut_1.txt";
+  std::string file4 = "P1_indut_2.txt";
   
   class stat1 cond1  ( path, file1 , 8, '\t', 3 );
   class stat1 cond2  ( path, file2 , 8, '\t', 3 );
@@ -212,7 +211,6 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
   size = Stat::fsize( &v );
   fMin = log10( Stat::fmin( &v ) ) ;
   fMax = log10( Stat::fmax( &v ) ) ;
-
   
 
   TGraphErrors* mod  = new TGraphErrors ( size );
@@ -220,44 +218,17 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
   TGraphErrors* tmod = new TGraphErrors ( size );
   TGraphErrors* targ = new TGraphErrors ( size );
   
-    mod->GetXaxis()->SetTitle("log (Freq - Hz)");
-    mod->GetYaxis()->SetTitle("|Z|");
-    mod->SetTitle(" Modulo impedenza  ");
-    mod->SetMarkerColor(4);
-    mod->SetMarkerStyle(21);
-    
-    arg->GetXaxis()->SetTitle("log (Freq - Hz)");
-    arg->GetYaxis()->SetTitle("Arg(Z)");
-    arg->SetTitle(" Argomento impedenza  ");
-    arg->SetMarkerColor(4);
-    arg->SetMarkerStyle(21);
+  
+  // parametri di stampa
+  std::string OutFilePrefix = "./c3/C3_P1_";
+  std::string OutFileExtension = ".eps";
+      
 
-    tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
-    tmod->GetYaxis()->SetTitle("|Z'/Z|");
-    tmod->SetTitle(" Modulo fdt  ");
-    tmod->SetMarkerColor(4);
-    tmod->SetMarkerStyle(21);
-    
-    targ->GetXaxis()->SetTitle("log (Freq - Hz)");
-    targ->GetYaxis()->SetTitle("Arg(Z'/Z)");
-    targ->SetTitle(" Argomento fdt  ");
-    targ->SetMarkerColor(4);
-    targ->SetMarkerStyle(21);
-
-    
-
-    TF1  *f1    = new TF1();	// non linear fit function
-    
-    TLinearFitter * regressione = new TLinearFitter();
-    
-
-    
+  TF1  *f1    = new TF1();	// non linear fit function
+  TF1  *f2    = new TF1();	// fitted function
+     
     
     // Mod impedenza
-    TF1 *lf1 = new TF1("lf1", "1++x", fMin, fMax);
-    regressione->SetFormula(lf1);
-    
-    
     for (int i = 0; i< size; i++) {
       
        y = ( Vba.at(i) / Vb.at(i) ) * ( R[comp] + r );
@@ -269,31 +240,78 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       mod->SetPoint( i, x, y );
       mod->SetPointError( i, sx, sy );
       
-
     }
     
-    f1->Clear();
-    
-    if ( comp <  2 ){ // condensatori
+
+    /// Condensatori
+    //
+    if ( comp <  2 ){
       
       f1 = new TF1("ModImpedenzaC", ModImpedenzaC, fMin ,fMax, 2);
-	// 1.0 / (  par[0] + 2 * M_PI * par[1] * exp10( x[0] ) )
-	f1->FixParameter( 0, 0 );
-	f1->SetParameter( 1,  C[comp] );
+      	f1->SetParameter( 0, 50 );		// resistenza
+	f1->SetParameter( 1,  C[comp] );	// condensatore
+	f1->SetParName( 0, "R [ohm]");
 	f1->SetParName( 1, "C [F]");
+	
+	Canv0->Clear();
+	Canv0->cd();
+	mod->GetXaxis()->SetTitle("log (Freq - Hz)");
+	mod->GetXaxis()->CenterTitle();
+	mod->SetTitle(" Modulo impedenza");
+	mod->SetMarkerColor(4);
+	mod->SetMarkerStyle(21);
+	
+	gStyle->SetOptFit(1111);
 	mod->Fit("ModImpedenzaC", "C", "", fMin, fMax);
+	mod->Draw("AP");
+	
+	TLegend * leg = new TLegend(0.6,0.3,0.89,0.6);
+	leg->AddEntry(f1, " y = #sqrt{ R^2+#frac{1}{(#omega C)^2} }", "l");
+	leg->AddEntry(mod, "data", "p");
+	leg->Draw();
+	
+	std::string OutObj = "_ModImp_";
+	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+
+	Canv0->Print( OutFileName.c_str(), "eps");     
+	
     }
     
-    else{	// induttori
+    
+    /// Induttori
+    //    
+    else{
       
       f1 = new TF1("ModImpedenzaL", ModImpedenzaL, fMin ,fMax, 2);
-	// sqrt( par[0]*par[0] + par[1]*par[1]*exp10( 2 * x[0] ) * 4 * M_PI * M_PI )
-	f1->FixParameter( 0,  rL );	// resitenza interna induttore
+	
+	f1->SetParameter( 0,  rL );	// resitenza interna induttore
 	f1->SetParameter( 1,  I[comp] );
 	f1->SetParName( 0, "R [ohm]");
 	f1->SetParName( 1, "L [H]");
 	
+	
+	Canv0->Clear();
+	Canv0->cd();
+	mod->GetXaxis()->SetTitle("log (Freq - Hz)");
+	mod->GetXaxis()->CenterTitle();
+	mod->SetTitle(" Modulo impedenza  ");
+	mod->SetMarkerColor(4);
+	mod->SetMarkerStyle(21);
+	
+	gStyle->SetOptFit(1111);
 	mod->Fit("ModImpedenzaL", "C", "", fMin, fMax);
+	mod->Draw("AP");
+	
+	TLegend * leg = new TLegend(0.2,0.3,0.5,0.6);
+	leg->AddEntry(f1, " y = #sqrt{ R^2+(#omega L)^2 }", "l");
+	leg->AddEntry(mod, "data", "p");
+	leg->Draw();
+
+	std::string OutObj = "_ModImp_";
+	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+	
+	Canv0->Print( OutFileName.c_str(), "eps");     
+
     }
 
 
@@ -316,26 +334,79 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
 
     f1->Clear();
     
-    if ( comp <  2 ){ // condensatori
-      f1 = new TF1 ("ArgImpedenzaC", ArgImpedenzaC, fMin ,fMax, 2);
-	// par[0] + par[1] * x[0]
-	f1->SetParameter( 0, 0.0 );
-	f1->FixParameter( 1, 0.0 );
-	f1->SetParName( 0, "phi [rad]");
+
+    /// Condensatori
+    ///
+    if ( comp <  2 ){
+      
+      f1 = new TF1 ("ArgImpedenzaC", ArgImpedenzaC, fMin ,fMax, 1);
+	f1->SetParameter( 0, 50*C[comp] );
+	f1->SetParName( 0, "RC [ohm*F]");
 	arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
+    
+	Canv0->Clear();
+	Canv0->cd();
+	arg->GetXaxis()->SetTitle("log (Freq - Hz)");
+	arg->GetXaxis()->CenterTitle();
+	arg->SetTitle(" Argomento impedenza  ");
+	arg->SetMarkerColor(4);
+	arg->SetMarkerStyle(21);
+	
+	gStyle->SetOptFit(1111);
+	arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
+	arg->Draw("AP");
+	
+	TLegend * leg = new TLegend(0.1,0.75,0.5,0.90);
+	leg->AddEntry(f1, " y = -arctan{ 1 / ( w *(RC) ) }", "l");
+	leg->AddEntry(arg, "data", "p");
+	leg->Draw();
+
+	std::string OutObj = "_ArgImp_";
+	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+
+	Canv0->Print( OutFileName.c_str(), "eps");     
+
     }
+
 
     else{	// induttori
       
-      f1 = new TF1 ("ArgImpedenzaL", ArgImpedenzaL, fMin ,fMax, 2);
-	// atan( 2 * M_PI * exp10( x[0] ) * par[1] / par[0] )
-	f1->FixParameter( 0, rL );
-	f1->SetParameter( 1, I[comp] );
-	f1->SetParName  ( 0, "R [ohm]");
-	f1->SetParName  ( 1, "L [H]");
+      f1 = new TF1 ("ArgImpedenzaL", ArgImpedenzaL, fMin ,fMax, 1);
+	f1->SetParameter( 0, I[comp] / ( r + rL ) );
+	f1->SetParName  ( 0, "L/R [H/ohm]");
+
+      // f2 = new TF1 ("fitted", ArgImpedenzaL, fMin ,fMax, 1);
+	// if (comp == 3) f2->SetParameter( 0, 0.120 / 117 );
+	// if (comp == 4) f2->SetParameter( 0, 0.046 /  67 );
 	
-      	arg->Fit("ArgImpedenzaL", "C", "", fMin, fMax);
+	Canv0->Clear();
+	Canv0->cd();
+	arg->GetXaxis()->SetTitle("log (Freq - Hz)");
+	arg->GetXaxis()->CenterTitle();
+	arg->SetTitle(" Argomento impedenza  ");
+	arg->SetMarkerColor(4);
+	arg->SetMarkerStyle(21);
+	
+	gStyle->SetOptFit(1111);
+	arg->Fit("ArgImpedenzaL", "C", "", fMin, fMax);
+	arg->Draw("AP");
+	
+	
+	TLegend * leg = new TLegend(0.6,0.25,0.89,0.5);
+	leg->AddEntry(f1, " y = arctan{  w * (L/R) ) }", "l");
+	leg->AddEntry(arg, "data", "p");
+	leg->Draw();
+
+	std::string OutObj = "_ArgImp_";
+	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+
+	Canv0->Print( OutFileName.c_str(), "eps");     
+
     }
+    
+
+
+    /////////////////////// Funzioni di Trasferimento
     
     
     // Modulo fdt
@@ -352,30 +423,71 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
     }
     
 
-    f1->Clear();
+
     
     if ( comp <  2 ){ // condensatori
       
-      f1 = new TF1 ("ModFdtC", ModFdtC, fMin ,fMax, 2);
-	// 1.0 / sqrt( 1 + par[0] * par[0] * par[1] * par[1] * 4 * M_PI * M_PI * exp10( 2 * x[0] ) )
-	f1->FixParameter( 0, R[comp] + r );
-	f1->SetParameter( 1, C[comp] );
-	f1->SetParName  ( 0, "R [ohm]");
-	f1->SetParName  ( 1, "C [F]");
-
+      f1 = new TF1 ("ModFdtC", ModFdtC, fMin ,fMax, 1);
+	
+	f1->SetParameter( 0, (R[comp] + r)*C[comp] );
+	f1->SetParName  ( 0, "RC [ohm*F]");
+	
+	Canv0->Clear();
+	Canv0->cd();
+	tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
+	tmod->GetXaxis()->CenterTitle();
+	tmod->SetTitle(" Modulo Funz. di trasferimento  ");
+	tmod->SetMarkerColor(4);
+	tmod->SetMarkerStyle(21);
+	
+	gStyle->SetOptFit(1111);
 	tmod->Fit("ModFdtC", "C", "", fMin, fMax);
+	tmod->Draw("AP");
+	
+	TLegend * leg = new TLegend(0.15,0.2,0.50,0.4);
+	leg->AddEntry(f1, " y = { 1 + (#omega^2)*(RC)^2 }^{-1/2}", "l");
+	leg->AddEntry( tmod, "data", "p");
+	leg->Draw();
+
+	std::string OutObj = "_ModFdT_";
+	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+	
+	Canv0->Print( OutFileName.c_str(), "eps");
     }
+    
+    
     
      else { 	// induttori
       
        f1 = new TF1 ("ModFdtL", ModFdtL, fMin ,fMax, 2);
-	// sqrt( 1 / ( 1 + exp10( -2 * x[0] ) * 4 * M_PI * M_PI * par[0] * par[0] / (par[1] * par[1]) ) )
-	f1->FixParameter( 0, rL );
+	
+	f1->SetParameter( 0, rL+100 );
 	f1->SetParameter( 1, I[comp] );
 	f1->SetParName  ( 0, "R [ohm]");
 	f1->SetParName  ( 1, "L [h]");
 
+	Canv0->Clear();
+	Canv0->cd();
+	tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
+	tmod->GetXaxis()->CenterTitle();
+	tmod->SetTitle(" Modulo Funz. di trasferimento  ");
+	tmod->SetMarkerColor(4);
+	tmod->SetMarkerStyle(21);
+	
+	gStyle->SetOptFit(1111);
 	tmod->Fit("ModFdtL", "C", "", fMin, fMax);
+	tmod->Draw("AP");
+	
+	TLegend * leg = new TLegend(0.6,0.15,0.9,0.40);
+	leg->AddEntry(f1, " y = w*L /#sqrt{ R^2+ (#omega^2)*(L)^2 }", "l");
+	leg->AddEntry( tmod, "data", "p");
+	leg->Draw();
+
+	std::string OutObj = "_ModFdT_";
+	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+	
+	Canv0->Print( OutFileName.c_str(), "eps");
+
     }
     
     
@@ -387,7 +499,7 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       sy =   sqrt( pow( sfC1.at(i) / fC1.at(i), 2) + pow( 1 / v.at(i), 2) ) * fabs(y);
       
       if ( comp < 2  )  y = y - M_PI;
-      if ( comp >= 2 )  y = - y + M_PI*0.5;
+      if ( comp >= 2 )  y = y - M_PI;
       
       
        x = log10( v.at(i) );
@@ -398,56 +510,71 @@ void C3P1_Fit( TCanvas * Canv0, int comp )
       
     }
 
-    f1->Clear();
+
     
     if ( comp <  2 ){ // condensatori
  
-    f1 = new TF1 ("ArgFdtC", ArgFdtC, fMin ,fMax, 2);
-    // atan( - 2 * M_PI * exp10( x[0] ) * par[0] * par[1] )
-      f1->FixParameter( 0, R[comp] + r );
-      f1->SetParameter( 1, C[comp] );
-      f1->SetParName  ( 0, "R [ohm]");
-      f1->SetParName  ( 1, "C [F]");
+    f1 = new TF1 ("ArgFdtC", ArgFdtC, fMin ,fMax, 1);
+      f1->SetParameter( 0, C[comp]*50 );
+      f1->SetParName  ( 0, "RC [ohm*F]");
+      
+      Canv0->Clear();
+      Canv0->cd();
+      targ->GetXaxis()->SetTitle("log (Freq - Hz)");
+      targ->GetXaxis()->CenterTitle();
+      targ->SetTitle(" Argomento Funz. di trasferimento  ");
+      targ->SetMarkerColor(4);
+      targ->SetMarkerStyle(21);
 	
+      gStyle->SetOptFit(1111);
       targ->Fit("ArgFdtC", "C", "", fMin, fMax);
+      targ->Draw("AP");
+	
+      TLegend * leg = new TLegend(0.16,0.25,0.45,0.5);
+      leg->AddEntry(f1, " y = arctan{  -w * (RC) ) }", "l");
+      leg->AddEntry(targ, "data", "p");
+      leg->Draw();
+
+      std::string OutObj = "_ArgFdT_";
+      std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+
+      Canv0->Print( OutFileName.c_str(), "eps");     
+
     }
+    
     
     else {
       
-    f1 = new TF1 ("ArgFdtL", ArgFdtL, fMin ,fMax, 2);
-    // atan( - 1.0 * ( par[0] / ( par[1] * 2 * M_PI * exp10( x[0] ) ) ) )
-      f1->FixParameter( 0, rL );
-      f1->SetParameter( 1, I[comp] );
-      f1->SetParName  ( 0, "R [ohm]");
-      f1->SetParName  ( 1, "L [H]");
+    f1 = new TF1 ("ArgFdtL", ArgFdtL, fMin ,fMax, 1);
+      f1->SetParameter( 0, rL / I[comp] );
+      f1->SetParName  ( 0, "R/L [ohm/H]");
 
+      Canv0->Clear();
+      Canv0->cd();
+      targ->GetXaxis()->SetTitle("log (Freq - Hz)");
+      targ->GetXaxis()->CenterTitle();
+      targ->SetTitle(" Argomento Funz. di trasferimento  ");
+      targ->SetMarkerColor(4);
+      targ->SetMarkerStyle(21);
+	
+      gStyle->SetOptFit(1111);
+      
       targ->Fit("ArgFdtL", "C", "", fMin, fMax);
+      targ->Draw("AP");
+	
+      TLegend * leg = new TLegend(0.11,0.71,0.35,0.91);
+      leg->AddEntry(f1, "y = arctan{  (R/L) / w ) }", "l");
+      leg->AddEntry(targ, "data", "p");
+      leg->Draw();
+
+      std::string OutObj = "_ArgFdT_";
+      std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
+
+      Canv0->Print( OutFileName.c_str(), "eps");     
       
     }
 
     
-    
-    Canv0->SetGrid();
-    Canv0->Divide(2,2); 
-    gStyle->SetOptFit(1111);
-    
-      Canv0->cd(1);  mod->Draw("AP");
-      Canv0->cd(2);  arg->Draw("AP");
-      Canv0->cd(3); tmod->Draw("AP");
-      Canv0->cd(4); targ->Draw("AP");
-      
-      
-      
-    ///////////////////////////////////////////////////////////
-    /// Print eps
-    
-    std::string OutFilePrefix = "./c3/C3_P1_";
-    std::string OutFileExtension = ".eps";
-    std::string OutFileName = OutFilePrefix+CompoName[comp]+OutFileExtension;
-    
-     Canv0->Print( OutFileName.c_str(), "eps");
-     Canv0->Clear();
-     
  
   
 return;}
@@ -466,26 +593,64 @@ void ComponentNameMessage( int i )
 
 
 
-double ModImpedenzaC ( double * x, double * par ) // x[0] è la frequenza [Hz]. Sul TGraphErrors è in scala log10
-{ return 1.0 / (  par[0] + 2 * M_PI * par[1] * exp10( x[0] ) );  }
+// NOTE: x[0] è la frequenza [Hz]. Sul TGraphErrors è in scala log10
+
+double ModImpedenzaC ( double * x, double * par ) 
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return sqrt (  par[0]*par[0] + 1.0 / ( par[1]*par[1]*w*w ) );  
+}
+
 
 double ArgImpedenzaC ( double * x, double * par )
-{ return par[0] + par[1] * x[0];  }
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return - atan (  1.0 / ( par[0]*w ) );  
+}
 
-double ModFdtC ( double * x, double * par )
-{ return 1.0 / sqrt( 1 + par[0] * par[0] * par[1] * par[1] * 4 * M_PI * M_PI * exp10( 2 * x[0] ) ); }
-
-double ArgFdtC ( double * x, double * par )
-{ return atan( - 2 * M_PI * exp10( x[0] ) * par[0] * par[1] ); }
 
 double ModImpedenzaL ( double * x, double * par )
-{ return sqrt( par[0]*par[0] + par[1]*par[1]*exp10( 2 * x[0] ) * 4 * M_PI * M_PI ); }
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return sqrt( 	par[0]*par[0] + w*w*par[1]*par[1]  );
+}
+
 
 double ArgImpedenzaL ( double * x, double * par )
-{ return atan( 2 * M_PI * exp10( x[0] ) * par[1] / par[0] ); }
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return atan (  w*par[0] );  
+}
+
+
+
+////////////////////////////////////////////////////////////
+/// Funzioni di trasferimento
+
+
+double ModFdtC ( double * x, double * par )
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return 1.0 / sqrt( 1 + par[0] * par[0] * w * w );
+}
+
+
+double ArgFdtC ( double * x, double * par )
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return atan (  - w * par[0] );  
+}
+
 
 double ModFdtL ( double * x, double * par )
-{ return sqrt( 1 / ( 1 + exp10( -2 * x[0] ) * 4 * M_PI * M_PI * par[0] * par[0] / (par[1] * par[1]) ) ); }
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return w * par[1] / sqrt( par[0] * par[0] + w * w * par[1] * par[1] );
+}
+
 
 double ArgFdtL ( double * x, double * par )
-{ return atan( - 1.0 * ( par[0] / ( par[1] * 2 * M_PI * exp10( x[0] ) ) ) ); }
+{ 
+  double w = 2 * M_PI * exp10( x[0] );
+  return atan (  par[0]/w );  
+}

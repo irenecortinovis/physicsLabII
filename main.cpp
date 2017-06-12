@@ -21,7 +21,7 @@ c++ stat1.cc main.cpp -o L2.o -Wall -std=c++98 `root-config --cflags --glibs`
 
 // #include "./c1/src/P3_1_diod.cpp"
 // #include "./c2/src/P1_1_trueRMS.cpp"
-// #include "./c3/src/P1_impedenze_fdt.cpp"
+ #include "./c3/src/P1_impedenze_fdt.cpp"
 // #include "./c3/src/P2_RL_impulsata.cpp"
 // #include "./c3/src/P2_RC_impulsata.cpp"
 // #include "./c4/src/P1_RLC_DC.cpp"
@@ -53,7 +53,7 @@ int main( int argc, char * argv[]){
 //   P1_1_trueRMS( Canv0 );
 
 //------------ C3 ---------------
-//   P1_impedenze_fdt( Canv0 );
+   P1_impedenze_fdt( Canv0 );
 
 //	 C3_P2_RL_impulsata();
 //	 C3_P2_RC_impulsata();
@@ -66,7 +66,7 @@ int main( int argc, char * argv[]){
 
   
 //------------ O1 --------------- // velocità della luce
-  O1_P2_c( Canv0 );
+//  O1_P2_c( Canv0 );
   
   
 //------------ O3 ---------------
