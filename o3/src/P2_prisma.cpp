@@ -47,11 +47,13 @@ void O3_P2_prisma()
 //----------------- Definizione canvas -----------------
 
     gStyle->SetOptFit(1111);
-    //gStyle->SetOptStat(0);
+    gStyle->SetOptStat(0);
 
 	TCanvas * c3 = new TCanvas("c3", "Prisma",1950,0,900,500);
 	TCanvas * c4 = new TCanvas("c4", "Prisma",0,0,900,500);
 	c4->Divide(1,2);
+	TCanvas * c5 = new TCanvas("c5", "Prisma",1950,0,900,500);
+
 
 
 //----------------- Definizione grafici -----------------
@@ -62,6 +64,11 @@ void O3_P2_prisma()
 	Gerr4->SetTitle("Determinazione di coefficienti A e B nella formula di Cauchy");
 	Gerr4->GetXaxis()->SetTitle("n(lambda)");
 	Gerr4->GetYaxis()->SetTitle("lambda");
+
+	TGraphErrors * Gerr5 = new TGraphErrors("./o3/data/P2_1_cauchy.txt", "%lg %lg %lg %lg");
+	Gerr5->SetTitle("Determinazione di coefficienti A e B nella formula di Cauchy (errori a posteriori)");
+	Gerr5->GetXaxis()->SetTitle("n(lambda)");
+	Gerr5->GetYaxis()->SetTitle("lambda");
 
 //parte 2 spettro di emissione delle lampade
 
@@ -107,6 +114,57 @@ void O3_P2_prisma()
 	std::cout << "B: " << round_to_digits(b_cauchy,2) <<
 	" +/- " << round_to_digits(b_cauchy_err,1) << " nm^2" << std::endl;
 
+	//errori a posteriori
+	std::cout << "--------- Calcolo errori a posteriori ----------" << std::endl;
+	double sigmap = 0;
+	double y_s = 0;
+	double x_s = 0;
+	for ( int i = 0; i< fit4->GetNumberFitPoints(); i++ ) {
+	  Gerr4->GetPoint(i, x_s, y_s);
+	  sigmap += pow(fit4->Eval(x_s) - y_s, 2);
+	}
+
+	sigmap = sqrt(sigmap / fit4->GetNDF());
+
+	std::cout << "Sigma calcolata con metodo errori a posteriori:\t" << sigmap << std::endl;
+
+	
+	//nuovo grafico con errori a posteriori
+	for(int i=0; i<Gerr5->GetN(); i++)
+	{
+	      Gerr5->SetPointError(i, 0, sigmap);
+	      //Gerr5->SetPointError(i, Gerr5->GetErrorX(i), sigmap);
+	}
+
+	TF1 * fit5 = new TF1("prisma a b cauchy", "[0]+[1]/(x*x)",0,2); //[nm]
+
+	//[0]=a, [1]=b
+	fit5->SetParName(0,"A");
+	fit5->SetParName(1, "B [nm^2]");
+	fit5->SetParameter(0,1); //
+	fit5->SetParameter(1,10000); //[nm^2]
+
+
+	c5->cd();
+	Gerr5->Draw("AP");
+	Gerr5->SetMarkerColor(1);
+	Gerr5->SetMarkerSize(1);
+	Gerr5->SetMarkerStyle(21);
+
+	Gerr5->Fit(fit5,"C");
+	const double a_cauchy_p = fit5->GetParameter(0);
+	const double b_cauchy_p = fit5->GetParameter(1);
+	const double a_cauchy_err_p = fit5->GetParError(0);
+	const double b_cauchy_err_p = fit5->GetParError(1);
+	std::cout << "\nRISULTATO" << std::endl;
+	std::cout << "A: " << round_to_digits(a_cauchy_p,4) <<
+	" +/- " << round_to_digits(a_cauchy_err_p,1) << std::endl;
+	std::cout << "B: " << round_to_digits(b_cauchy_p,2) <<
+	" +/- " << round_to_digits(b_cauchy_err_p,1) << " nm^2" << std::endl;
+
+
+
+
 
 
 
@@ -145,10 +203,10 @@ void O3_P2_prisma()
 		lampadaC_P2[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
 		lampadaC_P2[counter].n_err = errN(alpha, alpha_err,
 									   lampadaC_P2[counter].delta, lampadaC_P2[counter].delta_err);
-		lampadaC_P2[counter].lambda = sqrt(b_cauchy/(lampadaC_P2[counter].n-a_cauchy));
+		lampadaC_P2[counter].lambda = sqrt(b_cauchy_p/(lampadaC_P2[counter].n-a_cauchy_p));
 		histoP2C->Fill(lampadaC_P2[counter].lambda);
 		lampadaC_P2[counter].lambda_err = errLambda(lampadaC_P2[counter].n, lampadaC_P2[counter].n_err,
-												 b_cauchy, b_cauchy_err, a_cauchy, a_cauchy_err);
+												 b_cauchy_p, b_cauchy_err_p, a_cauchy_p, a_cauchy_err_p);
 		counter++;
 	}
 
@@ -208,10 +266,10 @@ void O3_P2_prisma()
 		lampadaD_P2[counter].n = sin(0.5*(alpha + x))/sin(0.5*alpha);
 		lampadaD_P2[counter].n_err = errN(alpha, alpha_err,
 								   lampadaD_P2[counter].delta, lampadaD_P2[counter].delta_err);
-		lampadaD_P2[counter].lambda = sqrt(b_cauchy/(lampadaD_P2[counter].n-a_cauchy));
+		lampadaD_P2[counter].lambda = sqrt(b_cauchy_p/(lampadaD_P2[counter].n-a_cauchy_p));
 		histoP2D->Fill(lampadaD_P2[counter].lambda);
 		lampadaD_P2[counter].lambda_err = errLambda(lampadaD_P2[counter].n, lampadaD_P2[counter].n_err,
-												 b_cauchy, b_cauchy_err, a_cauchy, a_cauchy_err);
+												 b_cauchy_p, b_cauchy_err_p, a_cauchy_p, a_cauchy_err_p);
 		counter++;
 	}
 
@@ -252,6 +310,7 @@ void O3_P2_prisma()
 //--------------------------------------Esporta immagini
 	c3->Print("./o3/O3_P2_1_AB.eps","eps");
 	c4->Print("./o3/O3_P2_2_spectrum.eps","eps");
+	c5->Print("./o3/O3_P2_1_AB_p.eps","eps");
 
 
 //-------------------------------------
