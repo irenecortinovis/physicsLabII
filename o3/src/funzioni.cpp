@@ -40,7 +40,7 @@ double Lambda_P1_2(double sinAngolo, const double d){
   return d/1.*sinAngolo;
 }
 double LambdaErr_P1_2(double sinAngolo, double err_sinAngolo, const double d, const double err_d){
-  return sqrt( pow (err_d/1.*sinAngolo , 2 ) + pow ( d/(sinAngolo*sinAngolo)*err_sinAngolo,2) );
+  return sqrt( pow (err_d*sinAngolo , 2 ) + pow ( d*cos(asin(sinAngolo))*err_sinAngolo,2) );
 }
 
 //----------------funzioni stampa tabelle latex
@@ -82,5 +82,6 @@ double errN(double alfa, double alfa_err, double delta, double delta_err){
 
 //Errore della lunghezza d'onda Lambda
 double errLambda(double N, double err_N, const double b, const double err_b, const double a, const double err_a ){
-	return sqrt( err_b*err_b/b + b/pow( (N-a), 2 )*( err_a*err_a + err_N*err_N) ) / (2*sqrt(N-a) );
+  //return sqrt( err_b*err_b/b + b/pow( (N-a), 2 )*( err_a*err_a + err_N*err_N) ) / (2*sqrt(N-a) );
+  return sqrt( err_b*err_b/(2*b*(N-a)) + (err_N*err_N + err_a*err_a)*b/(4*pow((N-a), 3)));
 }
