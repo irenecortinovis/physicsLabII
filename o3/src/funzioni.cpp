@@ -47,7 +47,7 @@ double LambdaErr_P1_2(double sinAngolo, double err_sinAngolo, const double d, co
 // E' IMPORTANTE CHE GLI SI PASSI UNA VARIABILE STRING SENNO' FA SBATTI DI COMPILAZIONE
 void LatexTableBegin(std::ofstream& OutputFile, std::string& caption){
   //File deve essere open
-  OutputFile<<"\\begin{table}[htbp]\n";
+  OutputFile<<"\\begin{table}[H]\n";
   OutputFile<<"\\begin{center}\n";
   OutputFile<<"\\caption{"  <<caption <<"}\n";
   OutputFile<<"\\begin{tabular}{|c|c|c|}\n";
@@ -83,5 +83,5 @@ double errN(double alfa, double alfa_err, double delta, double delta_err){
 //Errore della lunghezza d'onda Lambda
 double errLambda(double N, double err_N, const double b, const double err_b, const double a, const double err_a ){
   //return sqrt( err_b*err_b/b + b/pow( (N-a), 2 )*( err_a*err_a + err_N*err_N) ) / (2*sqrt(N-a) );
-  return sqrt( err_b*err_b/(2*b*(N-a)) + (err_N*err_N + err_a*err_a)*b/(4*pow((N-a), 3)));
+  return sqrt( err_b*err_b/(4*b*(N-a)) + (err_N*err_N + err_a*err_a)*b/(4*pow((N-a), 3)));
 }
