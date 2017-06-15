@@ -181,13 +181,16 @@ void P1_impedenze_fdt( TCanvas * Canv0 ) {
 
 
   // inizializza a 0 i Chi2 ricalcolati
-  for (int i = 0; i < 16 ; i++) gVar::Chi2[i] =0;
+  for (int i = 0; i < 16 ; i++)  gVar::Chi2[i] =0;
   
   // prima stima ricalcola i Chi2
-  for ( int i = 0; i<4; i++ )  C3P1_Fit( Canv0, i, 0 );
+  for ( int i = 0; i < 4; i++ )  C3P1_Fit( Canv0, i, 0 );
   
   // poi ristima con i nuovi errori su y
-  for ( int i = 0; i<4; i++ ) C3P1_Fit( Canv0, i, 1 );
+  for ( int i = 0; i < 4; i++ )  C3P1_Fit( Canv0, i, 1 );
+   for ( int i = 0; i < 4; i++ )  C3P1_Fit( Canv0, i, 1 );
+    
+    
   
 return;}
 
@@ -230,34 +233,34 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
       
 
   TF1  *f1    = new TF1();	// non linear fit function
-       
+  
     
     // Mod impedenza
     for (int i = 0; i< size; i++) {
-      
+
        y = ( Vba.at(i) / Vb.at(i) ) * ( R[comp] + r );
       sy = sqrt( pow( sigmaV*( 2/Vba.at(i) + 1/ Vb.at(i) ), 2)  + pow(errR,2) ) * y;	// propagazione errore su y
       if (flag == 1 ) sy = sqrt( Chi2[ comp + 0 ] ); // errori ricalcolati
-      
+
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10
-      
+
       mod->SetPoint( i, x, y );
       mod->SetPointError( i, sx, sy );
-      
+ 
     }
-    
+ 
 
     /// Condensatori
     //
     if ( comp <  2 ){
       
-      f1 = new TF1("ModImpedenzaC", ModImpedenzaC, fMin ,fMax, 2);
-      	f1->SetParameter( 0, 0 );		// resistenza
-	f1->SetParameter( 1,  C[comp] );	// condensatore
-	f1->SetParName( 0, "R [ohm]");
-	f1->SetParName( 1, "C [F]");
-	
+      f1 = new TF1("ModImpedenzaC", ModImpedenzaC, fMin ,fMax, 1);
+// 	f1->SetParameter( 0, 0 );		// resistenza
+	f1->SetParameter( 0,  C[comp] );	// condensatore
+// 	f1->SetParName(   0, "R [ohm]");
+	f1->SetParName(   0, "C [F]");
+
 	Canv0->Clear();
 	Canv0->cd();
 	mod->GetXaxis()->SetTitle("log (Freq - Hz)");
@@ -265,27 +268,29 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	mod->SetTitle(" Modulo impedenza");
 	mod->SetMarkerColor(4);
 	mod->SetMarkerStyle(21);
-	
+
 	gStyle->SetOptFit(1111);
 	mod->Fit("ModImpedenzaC", "C", "", fMin, fMax);
-	
+
 	// ricalcolo del chi2
 	Chi2[ comp + 0] = 0;
 	y = 0; x=0;
 	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
-	  
+
 	  mod->GetPoint( i, x, y);
-	  
-	  Chi2[ comp + 0] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+
+	  Chi2[ comp + 0 ] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+
+	  std::cout << f1->Eval(x) << ";" << y << "\n";
 	}
 	
 	mod->Draw("AP");
-	
+
 	TLegend * leg = new TLegend(0.6,0.3,0.89,0.6);
-	leg->AddEntry(f1, " y = #sqrt{ R^2+#frac{1}{(#omega C)^2} }", "l");
+	leg->AddEntry(f1, " y = #frac{1}{#omega C}", "l");
 	leg->AddEntry(mod, "data", "p");
 	leg->Draw();
-	
+
 	std::string OutObj = "ModImp_";
 	std::string OutFileName = OutFilePrefix+OutObj+CompoName[comp]+OutFileExtension;
 
@@ -300,11 +305,11 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
       
       f1 = new TF1("ModImpedenzaL", ModImpedenzaL, fMin ,fMax, 2);
 	
-	if (comp == 2) f1->SetParameter( 0,  2*rL );	// resitenza interna induttore
-	if (comp == 3) f1->SetParameter( 0,  rL );	// resitenza interna induttore
+	if (comp == 2) f1->SetParameter( 0,    rL );	// resitenza interna induttore
+	if (comp == 3) f1->SetParameter( 0,    rL );	// resitenza interna induttore
 	f1->SetParameter( 1,  I[comp] );
-	f1->SetParName( 0, "R [ohm]");
-	f1->SetParName( 1, "L [H]");
+	f1->SetParName  ( 0, "R [ohm]");
+	f1->SetParName  ( 1, "L [H]");
 	
 	
 	Canv0->Clear();
@@ -314,11 +319,11 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	mod->SetTitle("Modulo impedenza");
 	mod->SetMarkerColor(4);
 	mod->SetMarkerStyle(21);
-	
+
 	gStyle->SetOptFit(1111);
-	
+
 	mod->Fit("ModImpedenzaL", "C", "", fMin, fMax);
-	
+
 	// ricalcolo del chi2
 	Chi2[ comp + 0] = 0;
 	y = 0; x=0;
@@ -327,6 +332,9 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	  mod->GetPoint( i, x, y);
 	  
 	  Chi2[ comp + 0] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	  
+	  std::cout << f1->Eval(x) << ";" << y << "\n";
+	  
 	}
 	
 	mod->Draw("AP");
@@ -351,8 +359,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
       
        y = - 2 * M_PI * fC2.at(i)*v.at(i)*exp10(-6);		// dati in microsecondi
       sy =   sqrt( pow( sfC2.at(i) / fC2.at(i), 2) + pow( 1 / v.at(i), 2) ) * fabs(y);
-      sy = sy * 0.5;
-      // if (flag == 1 ) sy = sqrt( Chi2[ comp + 4 ] ); // errori ricalcolati
+//    sy = sy * 0.5;
+      if ( flag == 1 ) sy = sqrt( Chi2[ comp + 4 ] ); // errori ricalcolati
       
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10      
@@ -370,10 +378,10 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
     ///
     if ( comp <  2 ){
       
-       f1 = new TF1 ("ArgImpedenzaC", ArgImpedenzaC, fMin ,fMax, 1);
+        f1 = new TF1 ("ArgImpedenzaC", ArgImpedenzaC, fMin ,fMax, 1);
      
-	f1->SetParameter( 0, 50*C[comp] );
-	f1->SetParName( 0, "RC [ohm*F]");
+	f1->SetParameter( 0, -M_PI * 0.5 );
+	f1->SetParName  ( 0, "B");
 	arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
     
 	Canv0->Clear();
@@ -383,30 +391,33 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	arg->SetTitle("Argomento impedenza");
 	arg->SetMarkerColor(4);
 	arg->SetMarkerStyle(21);
-	
+
 	gStyle->SetOptFit(1111);
-	
+
 	if (comp == 0) arg->Fit("ArgImpedenzaC", "C", "", fMin, fMax);
-	
+
 	// escludo l'ultimo dato dalla stima --> outlier
 	if (comp == 1) arg->Fit("ArgImpedenzaC", "C", "", fMin, 4.2);
-	
-	
+
+
 	// ricalcolo del chi2
 	Chi2[ comp + 4] = 0;
 	y = 0; x=0;
 	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
+
+	arg->GetPoint( i, x, y);
 	  
-	  mod->GetPoint( i, x, y);
+	  Chi2[ comp + 4 ] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
 	  
-	  Chi2[ comp + 4] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	  std::cout << f1->Eval(x) << ";" << y << "\n";
+	  
 	}
 	
 	
 	arg->Draw("AP");
 	
 	TLegend * leg = new TLegend(0.1,0.75,0.5,0.90);
-	leg->AddEntry(f1, " y = -arctan{ 1 / ( w *(RC) ) }", "l");
+	leg->AddEntry(f1, " y = B", "l");
 	leg->AddEntry(arg, "data", "p");
 	leg->Draw();
 
@@ -448,9 +459,12 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	y = 0; x=0;
 	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
 	  
-	  mod->GetPoint( i, x, y);
+	  arg->GetPoint( i, x, y);
 	  
 	  Chi2[ comp + 4] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	  
+	  std::cout << f1->Eval(x) << ";" << y << "\n";
+	  
 	}
 	
 	
@@ -479,8 +493,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
       
        y = Vba.at(i) / Va.at(i);
       sy = y * sqrt( pow(errR,2) + pow( sigmaV*( 2/ Vba.at(i) + 1/ Va.at(i) ), 2) );	  // propagazione errore su y
-      sy = sy * 0.15;
-      //if (flag == 1 ) sy = sqrt( Chi2[ comp + 8 ] ); // errori ricalcolati
+      if (flag == 1 ) sy = sqrt( Chi2[ comp + 8 ] ); // errori ricalcolati
+//       if (comp >= 2 ) sy = 1.0 * y * sqrt( pow(errR,2) + pow( sigmaV*( 2/ Vba.at(i) + 1/ Va.at(i) ), 2) );	  // propagazione errore su y; // errori ricalcolati
       
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10      
@@ -517,9 +531,12 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	y = 0; x=0;
 	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
 	  
-	  mod->GetPoint( i, x, y);
+	  tmod->GetPoint( i, x, y);
 	  
 	  Chi2[ comp + 8] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	  
+	  std::cout << f1->Eval(x) << ";" << y << "\n";
+	  
 	}
 	
 	
@@ -560,13 +577,16 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	
 	
 	// ricalcolo del chi2
-	Chi2[ comp + 8] = 0;
+	Chi2[ comp + 8 ] = 0;
 	y = 0; x=0;
 	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
 	  
-	  mod->GetPoint( i, x, y);
+	  tmod->GetPoint( i, x, y);
 	  
 	  Chi2[ comp + 8] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	  
+	  std::cout << f1->Eval(x) << ";" << y << "\n";
+	  
 	}
 	
 	tmod->Draw("AP");
@@ -590,9 +610,10 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
       
        y =   2 * M_PI * fC1.at(i)*v.at(i)*exp10(-6);	// dati in microsecondi
       sy =   sqrt( pow( sfC1.at(i) / fC1.at(i), 2) + pow( 1 / v.at(i), 2) ) * fabs(y);
+      if (flag == 1 ) sy = sqrt( Chi2[ comp + 12 ] ); // errori ricalcolati
       
       if ( comp < 2  )  y = y - M_PI;
-      if ( comp >= 2 )  y = y - M_PI;
+      if ( comp >= 2 )  y = -y + M_PI;
       
       
        x = log10( v.at(i) );
@@ -628,9 +649,12 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	y = 0; x=0;
 	for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
 	  
-	  mod->GetPoint( i, x, y);
+	  targ->GetPoint( i, x, y);
 	  
 	  Chi2[ comp + 12] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	  
+	  std::cout << f1->Eval(x) << ";" << y << "\n";
+	  
 	}
       
       
@@ -652,8 +676,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
     else {
       
     f1 = new TF1 ("ArgFdtL", ArgFdtL, fMin ,fMax, 1);
-      f1->SetParameter( 0, ( R[comp] + r ) / I[comp] );
-      f1->SetParName  ( 0, "R/L [ohm/H]");
+      f1->SetParameter( 0, I[comp] / ( R[comp] + r ) );
+      f1->SetParName  ( 0, "L/R [ohm/H]");
 
       Canv0->Clear();
       Canv0->cd();
@@ -665,7 +689,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	
       gStyle->SetOptFit(1111);
       
-      targ->Fit("ArgFdtL", "C", "", fMin, fMax);
+      if ( comp == 2 ) targ->Fit("ArgFdtL", "C", "", fMin, 4.6);
+      if ( comp == 3 ) targ->Fit("ArgFdtL", "C", "", fMin, fMax);
       
       
       // ricalcolo del chi2
@@ -673,16 +698,19 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
       y = 0; x=0;
       for ( int i = 0; i< f1->GetNumberFitPoints(); i++ ) {
 	  
-	mod->GetPoint( i, x, y);
+	targ->GetPoint( i, x, y);
 	  
 	Chi2[ comp + 12] += pow( f1->Eval(x) - y  ,2) / f1->GetNDF();
+	
+	std::cout << f1->Eval(x) << ";" << y << "\n";
+	
       }
       
       
       targ->Draw("AP");
 	
       TLegend * leg = new TLegend(0.11,0.71,0.35,0.91);
-      leg->AddEntry(f1, "y = arctan{  (R/L) / w ) }", "l");
+      leg->AddEntry(f1, "y = arctan{  1 / w(L/R) ) }", "l");
       leg->AddEntry(targ, "data", "p");
       leg->Draw();
 
@@ -719,14 +747,16 @@ void ComponentNameMessage( int i )
 double ModImpedenzaC ( double * x, double * par ) 
 { 
   double w = 2 * M_PI * exp10( x[0] );
-  return sqrt (  par[0]*par[0] + 1.0 / ( par[1]*par[1]*w*w ) );  
+//   return sqrt (  par[0]*par[0] + 1.0 / ( par[1]*par[1]*w*w ) );
+  return sqrt (  1.0 / ( par[0]*par[0]*w*w ) );    
 }
 
 
 double ArgImpedenzaC ( double * x, double * par )
 { 
-  double w = 2 * M_PI * exp10( x[0] );
-  return - atan (  1.0 / ( par[0]*w ) );  
+//   double w = 2 * M_PI * exp10( x[0] );
+//   return - atan (  1.0 / ( par[0]*w ) );
+  return par[0];    
 }
 
 
@@ -773,5 +803,5 @@ double ModFdtL ( double * x, double * par )
 double ArgFdtL ( double * x, double * par )
 { 
   double w = 2 * M_PI * exp10( x[0] );
-  return atan (  par[0]/w );  
+  return atan (  1 / ( par[0] * w ) );  
 }
