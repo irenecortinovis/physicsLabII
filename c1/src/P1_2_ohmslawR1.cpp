@@ -6,6 +6,7 @@
 #include <TCanvas.h>
 #include <TApplication.h>
 #include <TGraphErrors.h>
+#include <TStyle.h>
 
 //c++ P1_2_ohmslawR1.cpp `root-config --cflags --glibs` -o P1_2_ohmslawR1.o
 
@@ -14,6 +15,8 @@
 int main(){
 
 	TApplication* Grafica = new TApplication("Grafica", 0, NULL);
+	gStyle->SetOptFit(1111);
+
 
 	//create vectors for tgrapherrors
 	int n=20;
@@ -41,7 +44,7 @@ int main(){
 	inFile.close();
 
 	//plot and fit
-	TCanvas* c1 = new TCanvas("c1","A Simple Graph with error bars");
+	TCanvas* c1 = new TCanvas("c1","Ohm");
 	TGraphErrors* gr = new TGraphErrors(n,voltage,current,errvoltage,errcurrent);
 	gr->SetTitle("Legge di Ohm - Resistore 1");
 	gr->GetXaxis()->SetTitle("Voltage [V]");
@@ -49,7 +52,7 @@ int main(){
 
 
 	TF1 *fitC1 = new TF1("fitC1","[0]*x",voltage[0],voltage[n-1]);
-	gr->Fit("fitC1");
+	gr->Fit("fitC1", "L");
 
 	//find value of resistance
 	double resistance;

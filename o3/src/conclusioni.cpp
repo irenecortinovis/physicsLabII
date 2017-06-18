@@ -34,7 +34,7 @@ void O3_conclusioni()
 //----------------- Definizione canvas -----------------
 
     gStyle->SetOptFit(1111);
-    //gStyle->SetOptStat(0);
+    gStyle->SetOptStat(0);
 
   TCanvas * c5 = new TCanvas("c5", "Lampada C",0,0,900,500);
   c5->Divide(1,2);
@@ -281,7 +281,7 @@ void O3_conclusioni()
   histoP2C->Draw();
 
   //--------------------------------------Esporta immagini
-  c5->Print("./o3/O3_C_lampadac_spectrum.eps","eps");
+  c5->Print("./o3/O3_C_lampadaC_spectrum.eps","eps");
   c6->Print("./o3/O3_C_lampadaD_spectrum.eps","eps");
 
   //Grafica->Run();

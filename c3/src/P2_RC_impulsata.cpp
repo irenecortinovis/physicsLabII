@@ -75,8 +75,12 @@ void C3_P2_RC_impulsata()
 //-------------------------------------Disegna e fitta grafici
 	
 
-	TCanvas* c1 = new TCanvas("c1", "RC corrente impulsata",  950, 950);
-	c1->Divide(2,2); 
+	TCanvas* c1 = new TCanvas("c1", "RC corrente impulsata condensatore",  950, 950);
+	c1->Divide(1,2);
+	TCanvas* c2 = new TCanvas("c2", "RC corrente impulsata resistore",  950, 950);
+	c2->Divide(1,2);
+
+
 	
 	//------Carica VC
 	c1->cd(1);
@@ -91,7 +95,7 @@ void C3_P2_RC_impulsata()
 	Gerr1->Fit(fit1,"C");
 
 	TLegend* legend1 = new TLegend(0.1,0.75,0.5,0.9);
-	legend1->AddEntry(fit1,"V_0*(1-exp(-x/Tau))","l");
+	legend1->AddEntry(f1,"V_0*(1-exp(-x/Tau))","l");
 	legend1->AddEntry(Gerr1,"data","p");
 	legend1->Draw();
 
@@ -113,7 +117,7 @@ void C3_P2_RC_impulsata()
 	legend2->Draw();
 
 	//------Carica VR
-	c1->cd(3);
+	c2->cd(1);
 	Gerr3->Draw("AP");
 	Gerr3->SetMarkerColor(1);
 	Gerr3->SetMarkerSize(1);
@@ -130,7 +134,7 @@ void C3_P2_RC_impulsata()
 	legend3->Draw();
 
 	//------Scarica VR
-	c1->cd(4);
+	c2->cd(2);
 	Gerr4->Draw("AP");
 	Gerr4->SetMarkerColor(1);
 	Gerr4->SetMarkerSize(1);
@@ -149,7 +153,8 @@ void C3_P2_RC_impulsata()
 	
 
 //--------------------------------------Esporta immagini
-	//c1->Print("C3_P2_RC_impulsata.eps","eps"
+	c1->Print("./c3/build/C3_P2_RC_impulsata_condensatore.eps","eps");
+	c2->Print("./c3/build/C3_P2_RC_impulsata_resistore.eps","eps");
 
 
 //--------------------------------------Calcolo di tau e di C

@@ -62,13 +62,13 @@ void O3_P2_prisma()
 
 	TGraphErrors * Gerr4 = new TGraphErrors("./o3/data/P2_1_cauchy.txt", "%lg %lg %lg %lg");
 	Gerr4->SetTitle("Determinazione di coefficienti A e B nella formula di Cauchy");
-	Gerr4->GetXaxis()->SetTitle("n(lambda)");
-	Gerr4->GetYaxis()->SetTitle("lambda");
+	Gerr4->GetXaxis()->SetTitle("lambda");
+	Gerr4->GetYaxis()->SetTitle("n(lambda)");
 
 	TGraphErrors * Gerr5 = new TGraphErrors("./o3/data/P2_1_cauchy.txt", "%lg %lg %lg %lg");
 	Gerr5->SetTitle("Determinazione di coefficienti A e B nella formula di Cauchy (errori a posteriori)");
-	Gerr5->GetXaxis()->SetTitle("n(lambda)");
-	Gerr5->GetYaxis()->SetTitle("lambda");
+	Gerr5->GetXaxis()->SetTitle("lambda");
+	Gerr5->GetYaxis()->SetTitle("n(lambda)");
 
 //parte 2 spettro di emissione delle lampade
 
@@ -316,7 +316,7 @@ void O3_P2_prisma()
 //-------------------------------------
 
 
-	//Grafica->Run();
+	Grafica->Run();
 
 	return;
 }

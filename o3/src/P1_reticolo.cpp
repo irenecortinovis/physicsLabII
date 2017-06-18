@@ -37,7 +37,7 @@ void O3_P1_reticolo()
 //----------------- Definizione canvas -----------------
 
     gStyle->SetOptFit(1111);
-    //gStyle->SetOptStat(0);
+    gStyle->SetOptStat(0);
 
 	TCanvas * c1 = new TCanvas("c1", "Reticolo",0,0,900,500);
 	TCanvas * c2 = new TCanvas("c2", "Reticolo",0,0,900,500);

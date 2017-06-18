@@ -72,10 +72,12 @@ int C3_P2_RL_impulsata()
 
 	
 //-------------------------------------Disegna e fitta grafici
-	TCanvas* c1 = new TCanvas("c1", "RL corrente impulsata",  950, 950);
-	c1->Divide(2,2); 
+	TCanvas* c1 = new TCanvas("C3_P2_RL_impulsata_induttore", "RL corrente impulsata induttore",  950, 950);
+	c1->Divide(1,2); 
+	TCanvas* c2 = new TCanvas("C3_P2_RL_impulsata_resistore", "RL corrente impulsata resistore",  950, 950);
+	c2->Divide(1,2);
 	
-	//------Carica VC
+	//------Carica VL
 	c1->cd(1);
 	Gerr1->Draw("AP");
 	Gerr1->SetMarkerColor(1);
@@ -92,7 +94,7 @@ int C3_P2_RL_impulsata()
 	legend1->AddEntry(Gerr1,"data","p");
 	legend1->Draw();
 
-	//------Scarica VC
+	//------Scarica VL
 	c1->cd(2);
 	Gerr2->Draw("AP");
 	Gerr2->SetMarkerColor(1);
@@ -110,7 +112,7 @@ int C3_P2_RL_impulsata()
 	legend2->Draw();
 
 	//------Carica VR
-	c1->cd(3);
+	c2->cd(1);
 	Gerr3->Draw("AP");
 	Gerr3->SetMarkerColor(1);
 	Gerr3->SetMarkerSize(1);
@@ -127,7 +129,7 @@ int C3_P2_RL_impulsata()
 	legend3->Draw();
 
 	//------Scarica VR
-	c1->cd(4);
+	c2->cd(2);
 	Gerr4->Draw("AP");
 	Gerr4->SetMarkerColor(1);
 	Gerr4->SetMarkerSize(1);
