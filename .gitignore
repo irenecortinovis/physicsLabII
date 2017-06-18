@@ -8,6 +8,8 @@
 
 *.tex
 *.pdf
+*.zip
+*.swp
 
 *.kdev4
 
