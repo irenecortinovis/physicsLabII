@@ -53,7 +53,8 @@ int main(){
 	gr->SetTitle("Potenza massima dissipata al variare di R Load");
 	gr->GetXaxis()->SetTitle("R Load [kOhm]");
 	gr->GetYaxis()->SetTitle("Potenza [mW]");
-	gr->SetMarkerColor(2);
+	gr->SetMarkerColor(4);
+    gr->SetMarkerStyle(21);
 
 	//vertical line
 	TLine *line = new TLine(150,0.028,150,0.098);
