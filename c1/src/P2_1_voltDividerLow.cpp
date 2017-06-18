@@ -5,6 +5,8 @@
 #include <TCanvas.h>
 #include <TApplication.h>
 #include <TGraphErrors.h>
+#include <TStyle.h>
+#include <TLegend.h>
 
 //c++ P2_1_voltDividerLow.cpp `root-config --cflags --glibs` -o P2_1_voltDividerLow.o
 
@@ -13,6 +15,12 @@
 int main(){
 
 	TApplication* Grafica = new TApplication("Grafica", 0, NULL);
+	gStyle->SetOptFit(1111);
+
+	//draw canvas
+	TCanvas* c1 = new TCanvas("Voltage divider","Voltage divider");
+	
+
 
 	//create vectors for tgrapherrors
 	int n=0;
@@ -42,39 +50,30 @@ int main(){
 	//check number of lines
 	std::cout << "n = " << n << std::endl;
 
-	//draw canvas
-	TCanvas* c1 = new TCanvas("Voltage divider","Voltage divider");
-	
 	//plot gr
 	TGraphErrors* gr = new TGraphErrors(n, &voltageIn.at(0), &voltageOut.at(0), &errvoltageIn.at(0), &errvoltageOut.at(0));
 	gr->SetTitle("R1 e R2 resistenza bassa");
 	gr->GetXaxis()->SetTitle("V in [V]");
 	gr->GetYaxis()->SetTitle("V out [V]");
-	//gr->Draw("AP");
-
-
-
-	//TF1
-	TF1* f1 = new TF1("f1", "0.5*x", voltageIn.at(0), voltageIn.at(n-1));
-
-
-
-	//chi square
-	double chi2 = 0;
-	double x, y;
-	int dof = n-1;
-
-	for (int i = 0; i<n; i++)
-	{
-	  gr->GetPoint(i, x, y);
-	  chi2 +=  pow(y - f1->Eval(x) ,2) / (gr->GetErrorY(i));
-	  //chi2 +=  pow(y - f1->Eval(x) ,2) / (f1->Eval(x));
-	}
-
-	std::cout << "chi2 / dof : "<< chi2 / dof << std::endl;
+	gr->SetMarkerColor(4);
+	gr->SetMarkerStyle(21);
 	gr->Draw("AP");
-	f1->Draw("SAME");
-	c1->Print("C1_P2_partResLow.eps", "eps");
+
+
+	//TF1 fit
+	TF1* fit1 = new TF1("fit1", "[0]*x", voltageIn.at(0), voltageIn.at(n-1));
+	fit1->SetParameter(0, 0.5);
+	fit1->SetParName(0, "[0] (pendenza)");
+
+
+	gr->Fit(fit1);
+	gr->Draw("AP");
+	//c1->Print("C1_P2_partResLow.eps", "eps");
+
+	TLegend* legend1 = new TLegend(0.1,0.75,0.5,0.9);
+	legend1->AddEntry(fit1,"V_out = [0]*V_in","l");
+	legend1->AddEntry(gr,"data","p");
+	legend1->Draw();
 
 	Grafica->Run("");
 
