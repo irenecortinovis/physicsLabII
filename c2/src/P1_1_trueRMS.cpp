@@ -77,19 +77,6 @@ void P1_1_trueRMS( TCanvas * Canv0 ) {
   TGraphErrors* grI = new TGraphErrors ( size );
   TGraphErrors* grV = new TGraphErrors ( size );
     
-    // parametri grafici
-    grI->GetXaxis()->SetTitle("ln( w [Hz] )");
-    grI->GetYaxis()->SetTitle("Current ratio");
-    grI->SetTitle(" Measurements ratio: multimeter / oscilloscope  ");
-    grI->SetMarkerColor(4);
-    grI->SetMarkerStyle(21);
-    
-    grV->GetXaxis()->SetTitle("ln( w [Hz] )");
-    grV->GetYaxis()->SetTitle("Voltage ratio");
-//     grV->SetTitle(" Measurements ratio: multimeter / oscilloscope  ");
-    grV->SetMarkerColor(4);
-    grV->SetMarkerStyle(21);
- 
     
     
     for (int i = 0; i< size; i++) {
@@ -102,11 +89,31 @@ void P1_1_trueRMS( TCanvas * Canv0 ) {
       grV->SetPointError( i, .02 * logw.at(i) / fabs( w.at(i) ), volt_ratio_err.at(i) );
     }
 
-    Canv0->SetGrid();
-    Canv0->Divide(1,2); 
-      Canv0->cd(1); grI->Draw("AP");
-      Canv0->cd(2); grV->Draw("AP");
-      
+
+    /// grafico I
+    grI->GetXaxis()->SetTitle("lg10( f [Hz] )");
+    grI->GetYaxis()->SetTitle("Current ratio");
+    grI->SetTitle("Measurements ratio: multimeter / oscilloscope  ");
+    grI->SetMarkerColor(4);
+    grI->SetMarkerStyle(21);
+    
+      Canv0->SetGrid();
+      grI->Draw("AP");
+      Canv0->Print("./c2/C2_P1_trueRMS_I.eps", "eps");
+
+    
+    /// grafico V
+    grV->GetXaxis()->SetTitle("lg10( f [Hz] )");
+    grV->GetYaxis()->SetTitle("Voltage ratio");
+    grV->SetTitle(" Measurements ratio: multimeter / oscilloscope  ");
+    grV->SetMarkerColor(4);
+    grV->SetMarkerStyle(21);
+    
+      Canv0->SetGrid();
+      grV->Draw("AP");
+      Canv0->Print("./c2/C2_P1_trueRMS_V.eps", "eps");
+
+
 
 
   ///////////////////////////////////////////////////////////
@@ -172,7 +179,7 @@ void P1_1_trueRMS( TCanvas * Canv0 ) {
   ///////////////////////////////////////////////////////////
   /// Print eps
       
-  Canv0->Print("C2_P1_trueRMS.eps", "eps");
+
       
   return;}
 

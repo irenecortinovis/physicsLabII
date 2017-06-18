@@ -286,8 +286,8 @@ void C3P1_Fit( TCanvas * Canv0, int comp, int flag )
 	
 	mod->Draw("AP");
 
-	TLegend * leg = new TLegend(0.6,0.3,0.89,0.6);
-	leg->AddEntry(f1, " y = #frac{1}{#omega C}", "l");
+	TLegend * leg = new TLegend(0.6,0.3,0.8,0.5);
+	leg->AddEntry(f1, "y = 1/(#omega C)", "l");
 	leg->AddEntry(mod, "data", "p");
 	leg->Draw();
 
