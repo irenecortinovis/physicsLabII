@@ -1,3 +1,4 @@
+
 //
 // Author: Alfredo Guarnieri
 //
@@ -190,18 +191,7 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
   TGraphErrors* tmod = new TGraphErrors ( size );
   TGraphErrors* targ = new TGraphErrors ( size );
   
-    tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
-    tmod->GetYaxis()->SetTitle("|Z'/Z|");
-    tmod->SetTitle(" Modulo fdt  ");
-    tmod->SetMarkerColor(4);
-    tmod->SetMarkerStyle(21);
     
-    targ->GetXaxis()->SetTitle("log (Freq - Hz)");
-    targ->GetYaxis()->SetTitle("Arg(Z'/Z)");
-    targ->SetTitle(" Argomento fdt  ");
-    targ->SetMarkerColor(4);
-    targ->SetMarkerStyle(21);
-
     // riempito all'occorrenza
     TF1  *f1 = new TF1();
 
@@ -212,7 +202,8 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
       
        y = Vb.at(i) / Va.at(i);
       sy = fabs(y) * sqrt( pow(errR,2) + pow( sigmaV*( 1/ Vb.at(i) + 1/ Va.at(i) ), 2) );	  // propagazione errore su y
-            
+      sy = 0.9 * sy;
+      
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) );	// precisione all'ultima cifra in scala log10      
             
@@ -220,30 +211,130 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
       tmod->SetPointError( i, sx, sy  );
     }
     
-
+    
     if ( comp == 0 ){ // resistenza
       
       f1 = new TF1("ModFdtR", ModFdtR , fMin, fMax, 3 );
-	// y = ( x[0] - ( par[0]/x[0] ) ) / ( 2*par[1] )
-        // par[2] / sqrt( 1 + pow(y,2)
-	f1->SetParName( 0, "w0^2");
-	  f1->SetParameter( 0,  1/(I*C) );
-	f1->SetParName( 1, "2gamma");
-	  f1->SetParameter( 1, (R+r+rL)/I );
-	f1->SetParName( 2, "R/Rtot");
-	  f1->FixParameter( 2, R/(R+r+rL) );
-	
- 	tmod->Fit("ModFdtR", "C", "", fMin, fMax);
-    }
+
+      f1->SetParName( 0, "puls.propr:");
+      f1->SetParameter( 0,  1/(I*C) );
+
+      f1->SetParName( 1, "gamma:");
+      f1->SetParameter( 1, 0.5 * (R+r+rL)/I );
+
+      f1->SetParName( 2, "r/R");
+      f1->SetParameter( 2, (r+rL)/R );
+
+    tmod->Fit("ModFdtR", "C", "", fMin, fMax);
+
+    tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
+    tmod->GetYaxis()->SetTitle("|Z'/Z|");
+    tmod->SetTitle("Modulo fdt - Resistenza");
+    tmod->SetMarkerColor(4);
+    tmod->SetMarkerStyle(21);
+
+    double rr = f1->GetParameter(2) * R;
+    double l  = (R + rr) / ( 2*f1->GetParameter(1) ) ;
+    double c  = 1.0 / ( f1->GetParameter(0) * l );
+
+    double el  = f1->GetParError(1) / f1->GetParameter(1) + 0.01;
+    double ec  = f1->GetParError(0) / f1->GetParameter(0) + el + 0.01;
+    double err = f1->GetParError(2) / f1->GetParameter(2) + 0.01;
     
-    if ( comp == 1 ) { 	// induttori
+    std::cout << "C: "   << c  << "\n";
+    std::cout << "eC%: " << ec*100 << "\n";
+
+    std::cout << "L: "   << l  << "\n";
+    std::cout << "eL%: " << el*100 << "\n";
+    
+    std::cout << "rr: "   << rr  << "\n";
+    std::cout << "err%: " << err*100 << "\n";
+    
+    }
+
+    
+    if ( comp == 1 ) { 	// induttore
       
+    f1 = new TF1("ModFdtL", ModFdtL, fMin, fMax, 3 );
+
+    f1->SetParName( 0, "puls.propr:");
+    f1->SetParameter( 0,  1/(I*C) );
+
+    f1->SetParName( 1, "gamma:");
+    f1->SetParameter( 1, 0.5 * (R+r+rL)/I );
+
+    f1->SetParName( 2, "r/R");
+    f1->SetParameter( 2, (r+rL)/R );
+
+    tmod->Fit("ModFdtL", "C", "", fMin, fMax);
+
+    tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
+    tmod->GetYaxis()->SetTitle("|Z'/Z|");
+    tmod->SetTitle("Modulo fdt - Induttanza");
+    tmod->SetMarkerColor(4);
+    tmod->SetMarkerStyle(21);
+
+    double rr = f1->GetParameter(2) * R;
+    double l  = (R + rr) / ( 2*f1->GetParameter(1) ) ;
+    double c  = 1.0 / ( f1->GetParameter(0) * l );
+
+    double el  = f1->GetParError(1) / f1->GetParameter(1) + 0.01;
+    double ec  = f1->GetParError(0) / f1->GetParameter(0) + el + 0.01;
+    double err = f1->GetParError(2) / f1->GetParameter(2) + 0.01;
+    
+    std::cout << "C: "   << c  << "\n";
+    std::cout << "eC%: " << ec*100 << "\n";
+
+    std::cout << "L: "   << l  << "\n";
+    std::cout << "eL%: " << el*100 << "\n";
+    
+    std::cout << "rr: "   << rr  << "\n";
+    std::cout << "err%: " << err*100 << "\n";
 
     }
     
+    
     if ( comp == 2 ) { 	// condensatore
       
+    f1 = new TF1("ModFdtC", ModFdtC, fMin, fMax, 3 );
+
+    f1->SetParName( 0, "puls.propr:");
+    f1->SetParameter( 0,  1/(I*C) );
+
+    f1->SetParName( 1, "gamma:");
+    f1->SetParameter( 1, 0.5 * (R+r+rL)/I );
+
+    f1->SetParName( 2, "r/R");
+    f1->SetParameter( 2, (r+rL)/R );
+
+    tmod->Fit("ModFdtC", "C", "", fMin, fMax);
+
+    tmod->GetXaxis()->SetTitle("log (Freq - Hz)");
+    tmod->GetYaxis()->SetTitle("|Z'/Z|");
+    tmod->SetTitle("Modulo fdt - Condensatore");
+    tmod->SetMarkerColor(4);
+    tmod->SetMarkerStyle(21);
+
+    double rr = f1->GetParameter(2) * R;
+    double l  = (R + rr) / ( 2*f1->GetParameter(1) ) ;
+    double c  = 1.0 / ( f1->GetParameter(0) * l );
+
+    double el  = f1->GetParError(1) / f1->GetParameter(1) + 0.01;
+    double ec  = f1->GetParError(0) / f1->GetParameter(0) + el + 0.01;
+    double err = f1->GetParError(2) / f1->GetParameter(2) + 0.01;
+    
+    std::cout << "C: "   << c  << "\n";
+    std::cout << "eC%: " << ec*100 << "\n";
+
+    std::cout << "L: "   << l  << "\n";
+    std::cout << "eL%: " << el*100 << "\n";
+    
+    std::cout << "rr: "   << rr  << "\n";
+    std::cout << "err%: " << err*100 << "\n";
+      
     }
+    
+    
     
     
     // Arg fdt
@@ -262,26 +353,125 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
     
     if ( comp == 0 ){ // resistenza
       
-      f1 = new TF1("ArgFdtR", ArgFdtR, fMin ,fMax, 2);
-	// y = ( x[0] - ( par[0]/x[0] ) ) / ( 4*par[1]*par[1] )
-	f1->SetParName( 0, "w0^2");
-	  f1->SetParameter( 0,  1/(I*C) );
-	f1->SetParName( 1, "2gamma");
-	  f1->SetParameter( 1,  (R+r+rL) / I );
-	
- 	targ->Fit("ArgFdtR", "CR", "", fMin, fMax);
-// 	f1->Draw("AP");
+    f1 = new TF1("ArgFdtR", ArgFdtR, fMin ,fMax, 3);
+
+    f1->SetParName( 0, "puls.propr:");
+    f1->SetParameter( 0,  1/(I*C) );
+
+    f1->SetParName( 1, "gamma:");
+    f1->SetParameter( 1,  0.5 * (R+r+rL) / I );
+    
+    f1->SetParName( 2, "r/R");
+    f1->SetParameter( 2,  (r+rL) / R );
+
+    targ->Fit("ArgFdtR", "C", "", fMin, fMax);
+
+    targ->GetXaxis()->SetTitle("log (Freq - Hz)");
+    targ->GetYaxis()->SetTitle("Arg(Z'/Z)");
+    targ->SetTitle("Argomento fdt - Resistenza");
+    targ->SetMarkerColor(4);
+    targ->SetMarkerStyle(21);
+
+    double rr = f1->GetParameter(2) * R;
+    double l  = (R + rr) / ( 2*f1->GetParameter(1) ) ;
+    double c  = 1.0 / ( f1->GetParameter(0) * l );
+
+    double el  = f1->GetParError(1) / f1->GetParameter(1) + 0.01;
+    double ec  = f1->GetParError(0) / f1->GetParameter(0) + el + 0.01;
+    double err = f1->GetParError(2) / f1->GetParameter(2) + 0.01;
+    
+    std::cout << "C: "   << c  << "\n";
+    std::cout << "eC%: " << ec*100 << "\n";
+
+    std::cout << "L: "   << l  << "\n";
+    std::cout << "eL%: " << el*100 << "\n";
+    
+    std::cout << "rr: "   << rr  << "\n";
+    std::cout << "err%: " << err*100 << "\n";
+    
     }
 
+
+    if ( comp == 1 ){ // Induttanza
+      
+    f1 = new TF1("ArgFdtL", ArgFdtL, fMin ,fMax, 3);
+
+    f1->SetParName( 0, "puls.propr:");
+    f1->SetParameter( 0,  1/(I*C) );
+
+    f1->SetParName( 1, "gamma:");
+    f1->SetParameter( 1,  0.5 * (R+r+rL) / I );
     
-//     if ( comp <  2 ){ // condensatori
-//  
-//     }
-//     
-//     else {
-//       
-//       
-//     }
+    f1->SetParName( 2, "r/R");
+    f1->SetParameter( 2,  (r+rL) / R );
+
+    targ->Fit("ArgFdtL", "CR", "", fMin, fMax);
+
+    targ->GetXaxis()->SetTitle("log (Freq - Hz)");
+    targ->GetYaxis()->SetTitle("Arg(Z'/Z)");
+    targ->SetTitle("Argomento fdt - Induttore");
+    targ->SetMarkerColor(4);
+    targ->SetMarkerStyle(21);
+
+    double rr = f1->GetParameter(2) * R;
+    double l  = (R + rr) / ( 2*f1->GetParameter(1) ) ;
+    double c  = 1.0 / ( f1->GetParameter(0) * l );
+
+    double el  = f1->GetParError(1) / f1->GetParameter(1) + 0.01;
+    double ec  = f1->GetParError(0) / f1->GetParameter(0) + el + 0.01;
+    double err = f1->GetParError(2) / f1->GetParameter(2) + 0.01;
+    
+    std::cout << "C: "   << c  << "\n";
+    std::cout << "eC%: " << ec*100 << "\n";
+
+    std::cout << "L: "   << l  << "\n";
+    std::cout << "eL%: " << el*100 << "\n";
+    
+    std::cout << "rr: "   << rr  << "\n";
+    std::cout << "err%: " << err*100 << "\n";
+    
+    }
+    
+    
+    if ( comp == 1 ){ // Condensatore
+      
+    f1 = new TF1("ArgFdtC", ArgFdtC, fMin ,fMax, 3);
+
+    f1->SetParName( 0, "puls.propr:");
+    f1->SetParameter( 0,  1/(I*C) );
+
+    f1->SetParName( 1, "gamma:");
+    f1->SetParameter( 1,  0.5 * (R+r+rL) / I );
+    
+    f1->SetParName( 2, "r/R");
+    f1->SetParameter( 2,  (r+rL) / R );
+
+    targ->Fit("ArgFdtC", "CR", "", fMin, fMax);
+
+    targ->GetXaxis()->SetTitle("log (Freq - Hz)");
+    targ->GetYaxis()->SetTitle("Arg(Z'/Z)");
+    targ->SetTitle("Argomento fdt - Condensatore");
+    targ->SetMarkerColor(4);
+    targ->SetMarkerStyle(21);
+
+    double rr = f1->GetParameter(2) * R;
+    double l  = (R + rr) / ( 2*f1->GetParameter(1) ) ;
+    double c  = 1.0 / ( f1->GetParameter(0) * l );
+
+    double el  = f1->GetParError(1) / f1->GetParameter(1) + 0.01;
+    double ec  = f1->GetParError(0) / f1->GetParameter(0) + el + 0.01;
+    double err = f1->GetParError(2) / f1->GetParameter(2) + 0.01;
+    
+    std::cout << "C: "   << c  << "\n";
+    std::cout << "eC%: " << ec*100 << "\n";
+
+    std::cout << "L: "   << l  << "\n";
+    std::cout << "eL%: " << el*100 << "\n";
+    
+    std::cout << "rr: "   << rr  << "\n";
+    std::cout << "err%: " << err*100 << "\n";
+    
+    }
 
     
     
@@ -315,17 +505,50 @@ double ModFdtR ( double * x, double * par )
 { 
   double w = 2 * M_PI * exp10(x[0]);
   double y = ( w - ( par[0]/w ) ) / ( 2*par[1] ) ;
-  return par[2] / sqrt( 1 + pow(y,2)  );  }
   
-// double ModFdtL ( double *, double * )
-// double ModFdtC ( double *, double * )
+  return 1 / sqrt( pow( 1 + par[2], 2 ) + pow(y,2)  );  }
+  
+  
+double ModFdtL ( double * x, double * par )
+{ 
+  double w = 2 * M_PI * exp10(x[0]);
+  double y = ( w - ( par[0]/w ) ) / ( 2*par[1] ) ;
+  double z = w / ( 2*par[1] );
+  
+  return z / sqrt( pow( 1 + par[2],2 ) + pow(y,2)  );  }
+
+
+double ModFdtC ( double * x, double * par )
+{ 
+  double w = 2 * M_PI * exp10(x[0]);
+  double y = ( w - ( par[0]/w ) ) / ( 2*par[1] ) ;
+  double z = w * 2 * par[1] / par[0] ;
+  
+  return 1.0 / ( z * sqrt( pow( 1+par[2], 2 ) + pow(y, 2)  ) ) ;  }
+
+
+
 
 
 double ArgFdtR ( double * x, double * par )
 { 
   double w = 2 * M_PI * exp10(x[0]);
   double y = ( w - ( par[0]/w ) ) / ( 2*par[1] ) ;
-  return atan( -y);  }
+  
+  return atan( - y / ( 1 + par[2] ) );  }
 
-// double ArgFdtL ( double *, double * )
-// double ArgFdtC ( double *, double * )
+
+double ArgFdtL ( double * x, double * par )
+{ 
+  double w = 2 * M_PI * exp10(x[0]);
+  double y = ( w - ( par[0]/w ) ) / ( 2*par[1] ) ;
+  
+  return atan( -( 1 + par[2] ) / y );  }
+
+
+double ArgFdtC ( double * x, double * par )
+{ 
+  double w = 2 * M_PI * exp10(x[0]);
+  double y = ( w - ( par[0]/w ) ) / ( 2*par[1] ) ;
+  
+  return atan( - ( 1 + par[2] ) / y );  }
