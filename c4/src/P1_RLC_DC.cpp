@@ -91,15 +91,15 @@ namespace gVar4{
 
 
 // funzioni per Non Linear Fit
-double SottoDC_ridotta  ( double *, double *  );
-double SottoDC_completa ( double *, double *  );
+double SottoDC ( double *, double *  );
 double SovraDC          ( double *, double *  );
+
 
 // funzioni calcolo valori iniziali
 double Gamma( double, double );
 double Pulsa( double, double, double );
 double Fase ( double, double, double );
-double A    ( double, double, double, double );
+double Q0   ( double, double );
 void   PrintParIniz( double, double, double, double );
 
 
@@ -180,24 +180,26 @@ void FitData( TCanvas * Canv0, int comp )
   fMin = Stat::fmin ( &t );
   fMax = Stat::fmax ( &t );
   
-  PrintParIniz( R[comp] + r + rL, I, C, V0 );
+  
+  TGraphErrors* mod  = new TGraphErrors ( size );    
+
+  TF1  *fsotto = new TF1();
+  TF1  *fsovra = new TF1();
+  TF1  *fcriti = new TF1();
+
 
   
-  TGraphErrors* mod  = new TGraphErrors ( size );
-    mod->GetXaxis()->SetTitle("t [s]");
-    mod->GetYaxis()->SetTitle("I(t) [mu A]");
-    mod->SetTitle( CompoName[comp].c_str() );
-    mod->SetMarkerColor(4);
-    mod->SetMarkerStyle(21);
-    
-
-  TF1  *f1 = new TF1();
-
-    
+  PrintParIniz( R[comp] + r + rL, I, C, V0 );
+  
+  
+  
     for (int i = 0; i< size; i++) {
       
-       y = ( Vb.at(i) * exp10(-3) ) / ( R[comp] + r + rL );
-      sy = fabs( eV.at(i) * exp10(-3) / ( R[comp] + r + rL ) ) + errR *fabs(y) ;
+//        y = ( Vb.at(i) * exp10(-3) ) / ( R[comp] + r + rL );
+//       sy = fabs( eV.at(i) * exp10(-3) / ( R[comp] + r + rL ) ) + errR *fabs(y) ;
+      
+       y = ( Vb.at(i) * exp10(-3) );
+      sy = 0.15*fabs( eV.at(i) * exp10(-3) );
       
        x = t.at(i) * exp10(-6);
       sx = fabs( et.at(i)* exp10(-6) );
@@ -210,74 +212,147 @@ void FitData( TCanvas * Canv0, int comp )
     
     if ( comp == 0 ){ 		// Sotto-smorzamento
       
-      f1->Clear();
-      f1 = new TF1("SottoDC_ridotta", SottoDC_ridotta, fMin ,fMax, 4);
-	// par[0] * exp( -par[1] * x[0] ) * ( 
-	//				      +par[1] * cos( par[2] * x[0] + par[3] )
-	//				      +par[2] * sin( par[2] * x[0] + par[3] )
-	
-	f1->SetParName  ( 0, " A:");
-	f1->SetParameter( 0,  C*V0 );
-	
-	f1->SetParName  ( 1, "gamm:");
-	f1->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
-	
-	f1->SetParName  ( 2, "puls:");
-	f1->SetParameter( 2,  Pulsa( R[comp] + r + rL, I, C ) );
-	  
-	f1->SetParName  ( 3, "fase:");
-	f1->SetParameter( 3,  0 );
+      
+      fsotto = new TF1( "SottoDC", SottoDC, fMin ,fMax, 3 );
 
-	mod->Fit("SottoDC_ridotta", "C", "", fMin, fMax);
+	fsotto->SetParName  ( 0, "ampiezz:");
+	fsotto->SetParameter( 0,  C*V0*(R[comp] + r + rL) );
+	
+	fsotto->SetParName  ( 1, "gamma:");
+	fsotto->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
+	
+	fsotto->SetParName  ( 2, "pulsaz:");
+	fsotto->SetParameter( 2,  Pulsa( R[comp] + r + rL, I, C ) );
+
+	mod->Fit("SottoDC", "C", "", fMin, fMax);
+
+	Canv0->cd();
+	mod->GetXaxis()->SetTitle("t [s]");
+	mod->GetYaxis()->SetTitle("V(t) [mV]");
+	mod->SetTitle( CompoName[comp].c_str() );
+	mod->SetMarkerColor(4);
+	mod->SetMarkerStyle(21);
+
+	double c = fsotto->GetParameter(0)/ (V0*(R[comp] + r + rL));
+	double l1 = 1 / ( 2*fsotto->GetParameter(1) ) * (R[comp] + r + rL);
+	double l2 = pow( fsotto->GetParameter(1), 2) + pow(fsotto->GetParameter(2), 2);
+	       l2 = 1/(l2*c);
+	
+        double ec  = fsotto->GetParError(0) / fsotto->GetParameter(0) + 0.01 + 0.01;
+	double el1 = fsotto->GetParError(1) / fsotto->GetParameter(1) + 0.01;
+   
+
+
+	std::cout << "C: "   << c  << "\n";
+	std::cout << "eC%: " << ec*100 << "\n";
+
+	std::cout << "L1: "   << l1  << "\n";
+	std::cout << "eL1%: " << el1*100 << "\n";
+	
+	std::cout << "L2: "   << l2  << "\n";
+	std::cout << "eL2%: " << " " << "\n";
+
+	
+
     }
     
 
     
     if ( comp == 1 ) { 	// critico
       
-      f1->Clear();
-      f1 = new TF1("critico","[0]*[1]*[1]*x*exp(-[1]*x)",fMin,fMax); 
-	//
+      fcriti = new TF1("critico","[0]*[1]*[1]*x*exp(-[1]*x)",fMin,fMax); 
       
-	f1->SetParName(0,"RQ_0");
-	  f1->SetParameter( 0,  V0/ ( 2*I*Pulsa( R[comp] + r + rL, I, C ) )  );
-	
-	f1->SetParName(1,"gamma");
-	  f1->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
+// 	fcriti->SetParName(0,"RQ_0");
+// 	  fcriti->SetParameter( 0,  V0/ ( 2*I*Pulsa( R[comp] + r + rL, I, C ) )  );
+
+	fcriti->SetParName  ( 0, "ampiezz:");
+	  fcriti->SetParameter( 0,  C*V0*(R[comp] + r + rL) );
+	  
+	fcriti->SetParName(1,"gamma");
+	  fcriti->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
 	
 	
       mod->Fit("critico", "C", "", fMin, fMax);
       
+      Canv0->cd();
+	mod->GetXaxis()->SetTitle("t [s]");
+	mod->GetYaxis()->SetTitle("V(t) [mV]");
+	mod->SetTitle( CompoName[comp].c_str() );
+	mod->SetMarkerColor(4);
+	mod->SetMarkerStyle(21);
+
+	double c = fcriti->GetParameter(0)/ (V0*(R[comp] + r + rL));
+	double l1 = 1 / ( 2*fcriti->GetParameter(1) ) * (R[comp] + r + rL);
+
+        double ec  = fcriti->GetParError(0) / fcriti->GetParameter(0) + 0.01 + 0.01;
+	double el1 = fcriti->GetParError(1) / fcriti->GetParameter(1) + 0.01;
+   
+
+	std::cout << "R: "   << R[comp] + r + rL  << "\n";
+	
+	std::cout << "C: "   << c  << "\n";
+	std::cout << "eC%: " << ec*100 << "\n";
+
+	std::cout << "L1: "   << l1  << "\n";
+	std::cout << "eL1%: " << el1*100 << "\n";
+      
     }
 
+    
+   // risetto gli errori sperimentali
+   for (int i = 0; i< size; i++) {
+     
+     sy = 0.5 * fabs( eV.at(i) * exp10(-3) );
+     sx = fabs( et.at(i)* exp10(-6) );
+      
+     mod->SetPointError( i, sx, sy );
+    }
+    
 
     if ( comp == 2 ){	// Sovra-smorzamento
       
-	f1->Clear();
-        f1 = new TF1("SovraDC", SovraDC, fMin ,fMax, 3);
-	// 
-	
-	f1->SetParName  ( 0, " A:");
-	f1->SetParameter( 0,  V0/ ( 2*I*Pulsa( R[comp] + r + rL, I, C ) )  );
-	
-	f1->SetParName  ( 1, "gamm:");
-	f1->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
-	
-	f1->SetParName  ( 2, "puls:");
-	f1->SetParameter( 2,  Pulsa     ( R[comp] + r + rL, I, C ) );
-	
-//     f1 = new TF1("sovrasmorzato","[0]*(exp(-x*([2]-[1])) - exp(-x*([2]+[1])) )",fMin,fMax);
-//     //[0]=1/2*Q0R*(omega0)^2 [1]= beta [2]=gamma
-//     f1->SetParName(0,"1/2*RQ_0*(omega_0)^2");
-//     f1->SetParName(1,"beta");
-//     f1->SetParName(2,"gamma");
-// 	
-//     f1->SetParameter(0, 5.0/(0.0657 * 2.0 * 74000) );
-//     f1->SetParameter(1, 74000);
-//     f1->SetParameter(2, 76000);
-	
+        fsovra = new TF1("SovraDC", SovraDC, fMin ,fMax, 3);
+
+	fsovra->SetParName  ( 0, "V0*Q0:");
+	fsovra->SetParameter( 0,  0.0023 );
+
+	fsovra->SetParName  ( 1, "theta:");
+	fsovra->SetParameter( 1,  2300 );
+
+	fsovra->SetParName  ( 2, "eta:");
+	fsovra->SetParameter( 2,  15000 );
+
+// 	fsovra->SetParName  ( 1, "gamm:");
+// 	fsovra->SetParameter( 1,  Gamma     ( R[comp] + r + rL, I ) );
+// 
+// 	fsovra->SetParName  ( 2, "pul.prop:");
+// 	fsovra->SetParameter( 2,  1.0 / (C*I) );
+
     mod->Fit("SovraDC", "C", "", fMin, fMax);
     
+    Canv0->cd();
+      mod->GetXaxis()->SetTitle("t [s]");
+      mod->GetYaxis()->SetTitle("V(t) [mV]");
+      mod->SetTitle( CompoName[comp].c_str() );
+      mod->SetMarkerColor(4);
+      mod->SetMarkerStyle(21);
+
+      
+    double c = fsovra->GetParameter(0)/ (V0*(R[comp] + r + rL));
+    double l1 = fsovra->GetParameter(2) - fsovra->GetParameter(1);
+           l1 = (R[comp] + r + rL) / l1;
+
+    double ec  = fsovra->GetParError(0) / fsovra->GetParameter(0) + 0.01 + 0.01;
+    double el1 = fsovra->GetParError(2) / fsovra->GetParameter(2) + 0.01;
+   
+    std::cout << "R: "   << R[comp] + r + rL  << "\n";
+
+    std::cout << "C: "   << c  << "\n";
+    std::cout << "eC%: " << ec*100 << "\n";
+
+    std::cout << "L1: "   << l1  << "\n";
+    std::cout << "eL1%: " << el1*100 << "\n";
+      
     }
 
     
@@ -303,40 +378,46 @@ void FitData( TCanvas * Canv0, int comp )
 
 
 
-double SottoDC_ridotta ( double * x, double * par ) 
-{ 
-  double y = par[0] * exp( -par[1] * x[0] ) * sin( par[2] * x[0] + par[3] ); 
-  return y;  }
-
-double SottoDC_completa ( double * x, double * par )
+double SottoDC ( double * x, double * par )
 { double y = par[0] * exp( -par[1] * x[0] ) * ( 
-					      +par[1] * cos( par[2] * x[0] + par[3] )
-					      +par[2] * sin( par[2] * x[0] + par[3] )
+					      +par[1] * cos( par[2] * x[0] )
+					      +par[2] * sin( par[2] * x[0] )
 					      );
   return y;}
 
+
+  
+  
+  
 double SovraDC ( double * x, double * par ) 
 { 
-  double y = par[0] * exp( (-par[1] + sqrt( par[1]*par[1] - par[2] ) ) * x[0] ) -  
-	     par[0] * exp( (-par[1] - sqrt( par[1]*par[1] - par[2] ) ) * x[0] ) ; 
+  double A     = par[0];
+  double theta = par[1];
+  double eta   = par[2];
+  
+  double B     = pow( 0.5*(eta-theta),2) +  pow( 0.5*(eta+theta),2);
+         B     = B / (theta + eta);
+  
+  double  y = A * B * ( exp( -theta*x[0] ) - exp( -eta*x[0] ) );
+  
   return y;}
 
 
+  
 
-double Gamma( double R, double L )          { return 0.5* R/L; };
-double Pulsa( double R, double L, double C) { return sqrt( fabs( -(R*R / (4*L*L)) + (1/(C*L)) ) ); };
-double Fase ( double R, double L, double C) { return atan( ( (1.0/(R*C)) - (0.5*R/L) )/ Pulsa( R, L, C ) ); };
-double A    ( double R, double L, double C, double V ) { return C*V / cos( Fase(R, L, C)); };
+double Gamma ( double R, double L )          { return R / ( 2*L ); };
+double Pulsa ( double R, double L, double C) { return sqrt( fabs( -(R*R / (4*L*L)) + (1/(C*L)) ) ); };
+double Fase  ( double R, double L, double C) { return atan( ( (1.0/(R*C)) - (0.5*R/L) )/ Pulsa( R, L, C ) ); };
+double Q0    ( double C, double V )          { return C*V; };
+
 
 void PrintParIniz( double R, double L, double C, double V ){
   using namespace gVar4;
   std::cout << "\n---------------------------------" << "\n"
+  << "Q0 (sotto)     : "<<  Q0   ( C, V) 	<< "\n"
   << "Gamma       : " 	<<  Gamma( R, L )	  	<< "\n"
   << "Pulsa       : " 	<<  Pulsa( R, L, C) 	<< "\n"
   << "Fase (sotto)  : "	<<  Fase ( R, L, C) 	<< "\n"
-  << "A (sotto)     : " 	<<  A    ( R, L, C, V) 	<< "\n"
   << "---------------------------------" << "\n\n";
   
 return; };
-
-
