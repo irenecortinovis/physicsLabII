@@ -6,6 +6,8 @@
 #include <TCanvas.h>
 #include <TApplication.h>
 #include <TGraphErrors.h>
+#include <TStyle.h>
+#include <TLegend.h>
 
 //c++ P1_2_ohmslawR2.cpp `root-config --cflags --glibs` -o P1_2_ohmslawR2.o
 
@@ -14,6 +16,7 @@
 int main(){
 
 	TApplication* Grafica = new TApplication("Grafica", 0, NULL);
+	gStyle->SetOptFit(1111);
 
 	//create vectors for tgrapherrors
 	int n=20;
@@ -48,17 +51,24 @@ int main(){
 	gr->GetYaxis()->SetTitle("Current [A]");
 
 
-	TF1 *fitC1 = new TF1("fitC1","[0]*x",voltage[0],voltage[n-1]);
+	TF1 *fitC1 = new TF1("fitC1","x/[0]",voltage[0],voltage[n-1]);
+	fitC1->SetParName(0, "R [Ohm]");
+	fitC1->SetParameter(0, 260);
 	gr->Fit("fitC1");
 
 	//find value of resistance
 	double resistance;
-	resistance = 1/fitC1->GetParameter(0);
+	resistance = fitC1->GetParameter(0);
 	//find error for resistance
-	double errresistance = resistance*resistance * (fitC1->GetParError(0));
+	double errresistance = fitC1->GetParError(0);
 
-	gr->Draw("AP");
+	gr->Draw("A*");
 	c1->Print("R2.eps", "eps");
+
+	TLegend* legend1 = new TLegend(0.1,0.75,0.5,0.9);
+	legend1->AddEntry(fitC1,"I = 1/R * V(I)","l");
+	legend1->AddEntry(gr,"data","p");
+	legend1->Draw();
 
 
 	std::cout << std::fixed;
