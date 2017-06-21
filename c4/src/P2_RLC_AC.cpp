@@ -155,11 +155,9 @@ void P2_RLC_AC( TCanvas * Canv0 ) {
 //   gVar1::I[3] =   0.05;
 
 
-  // Non linear Fit
-
+   // Non linear Fit
    for ( int i = 0; i<3; i++ ) P2_AC_Fit( Canv0, i );
   
-  // NOT TO DO Linear Fit
   
   
     
@@ -195,8 +193,7 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
     // riempito all'occorrenza
     TF1  *f1 = new TF1();
 
-    
-    
+     
     // Modulo fdt
     for (int i = 0; i< size; i++) {
       
@@ -343,16 +340,21 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
        y =   2 * M_PI * fC1.at(i)*v.at(i)*exp10(-6);	// dati in microsecondi
       sy =   sqrt( pow( sfC1.at(i) / fC1.at(i), 2) + pow( 1 / v.at(i), 2) ) * fabs(y);
       
+      if ( comp==2 ) y = 2.16 -y;
+      
        x = log10( v.at(i) );
       sx = 0.5 * ( log10( v.at(i) +1 ) - log10( v.at(i) -1) ) ;	// precisione all'ultima cifra in scala log10      
       
+      std::cout << x << "++" << fC1.at(i) << "++" << y << "\n";
+      
       targ->SetPoint( i, x, y );
-      targ->SetPointError( i, sx, sy  );      
+      targ->SetPointError( i, sx, sy  ); 
     }
 
     
     if ( comp == 0 ){ // resistenza
-      
+    
+    f1->Clear();
     f1 = new TF1("ArgFdtR", ArgFdtR, fMin ,fMax, 3);
 
     f1->SetParName( 0, "puls.propr:");
@@ -393,7 +395,8 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
 
 
     if ( comp == 1 ){ // Induttanza
-      
+    
+    f1->Clear();
     f1 = new TF1("ArgFdtL", ArgFdtL, fMin ,fMax, 3);
 
     f1->SetParName( 0, "puls.propr:");
@@ -433,9 +436,10 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
     }
     
     
-    if ( comp == 1 ){ // Condensatore
-      
-    f1 = new TF1("ArgFdtC", ArgFdtC, fMin ,fMax, 3);
+    if ( comp == 2 ){ // Condensatore
+    
+    f1->Clear();
+    f1 = new TF1("ArgFdtC", ArgFdtC, fMin ,fMax, 2);
 
     f1->SetParName( 0, "puls.propr:");
     f1->SetParameter( 0,  1/(I*C) );
@@ -446,7 +450,8 @@ void P2_AC_Fit( TCanvas * Canv0, int comp )
     f1->SetParName( 2, "r/R");
     f1->SetParameter( 2,  (r+rL) / R );
 
-    targ->Fit("ArgFdtC", "CR", "", fMin, fMax);
+    targ->Clear();
+    targ->Fit("ArgFdtC", "CR", "", 2.2, fMax);
 
     targ->GetXaxis()->SetTitle("log (Freq - Hz)");
     targ->GetYaxis()->SetTitle("Arg(Z'/Z)");
@@ -551,4 +556,7 @@ double ArgFdtC ( double * x, double * par )
   double w = 2 * M_PI * exp10(x[0]);
   double y = ( w - ( par[0]/w ) ) / ( 2*par[1] ) ;
   
-  return atan( - ( 1 + par[2] ) / y );  }
+  return atan( ( 1 + par[2] ) / y );  }
+
+  
+  
